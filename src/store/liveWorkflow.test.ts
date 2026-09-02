@@ -1,0 +1,58 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import { checkConstraints, products, useStore } from "./useStore";
+import type { Product } from "../types";
+
+const liveProduct = (overrides: Partial<Product> = {}): Product => ({
+  id: "live-1",
+  sourceId: "gid://shopify/ProductVariant/1",
+  domain: "gadgets",
+  name: "Live headphones",
+  category: "gadgets",
+  price: 25,
+  currency: "USD",
+  merchant: "Live merchant",
+  description: "Verified listing",
+  emoji: "G",
+  tags: [],
+  demoOnly: false,
+  ...overrides,
+});
+
+describe("live workflow guards", () => {
+  beforeEach(() => useStore.getState().resetWorkspace());
+
+  it("rejects seeded demo products from active cart actions", () => {
+    useStore.getState().startDomain("gadgets", false);
+    const seeded = products.find((product) => product.domain === "gadgets")!;
+    expect(useStore.getState().addToCart(seeded.id, 1, "agent", "test").ok).toBe(false);
+  });
+
+  it("accepts a current verified live product", () => {
+    useStore.getState().startDomain("gadgets", false);
+    useStore.setState({ liveProducts: [liveProduct()] });
+    expect(useStore.getState().addToCart("live-1", 1, "user").ok).toBe(true);
+  });
+
+  it("discards completion from a stale search after the category changes", () => {
+    useStore.getState().startDomain("gadgets", false);
+    const searchId = useStore.getState().beginLiveSearch()!;
+    useStore.getState().startDomain("clothing", false);
+    expect(useStore.getState().completeLiveSearch(searchId, [liveProduct()], "stale")).toBe(false);
+    expect(useStore.getState().domain).toBe("clothing");
+    expect(useStore.getState().liveProducts).toEqual([]);
+  });
+
+  it("keeps currency totals separate", () => {
+    useStore.getState().startDomain("gadgets", false);
+    useStore.setState({ liveProducts: [liveProduct(), liveProduct({ id: "live-2", currency: "NGN", price: 1000 })], cart: [{ productId: "live-1", qty: 1 }, { productId: "live-2", qty: 2 }] });
+    expect(useStore.getState().cartTotals().currencyTotals).toEqual([{ currency: "NGN", total: 2000 }, { currency: "USD", total: 25 }]);
+  });
+
+  it("treats missing allergen metadata as unknown rather than safe", () => {
+    useStore.getState().startDomain("meals", false);
+    useStore.setState({ liveProducts: [liveProduct({ id: "meal-1", domain: "meals" })] });
+    const result = checkConstraints([{ productId: "meal-1", qty: 1 }], { excludeAllergens: ["peanut"] })[0];
+    expect(result.pass).toBe(false);
+    expect(result.detail).toContain("no verified allergen data");
+  });
+});

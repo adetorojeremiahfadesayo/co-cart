@@ -1,4 +1,5 @@
-import { productById, useStore } from "../store/useStore";
+import { liveProductById, useStore } from "../store/useStore";
+import { formatMoney } from "../utils/money";
 
 export default function ProductCard({
   id,
@@ -11,71 +12,95 @@ export default function ProductCard({
   const preferences = useStore((s) => s.preferences);
   const addToCart = useStore((s) => s.addToCart);
 
-  const p = productById(id);
+  const p = liveProductById(id);
   if (!p) return null;
 
   const inCart = cart.find((i) => i.productId === id);
-  const hasAllergen = preferences.allergens.some((a) => p.allergens.includes(a));
-  const dietMatch =
-    preferences.diets.length > 0 && preferences.diets.every((d) => p.diets.includes(d));
+  const allergens = p.allergens ?? [];
+  const diets = p.diets ?? [];
+  const hasAllergen = preferences.allergens.some((a) => allergens.includes(a));
+  const dietMatch = preferences.diets.length > 0 && preferences.diets.every((d) => diets.includes(d));
+  const price = formatMoney(p.price, p.currency);
 
   return (
     <div
       data-product-id={p.id}
-      className={`card-in relative flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition ${
-        highlighted ? "agent-highlight border-emerald-400" : "border-stone-200"
+      className={`card-pop product-card group relative flex h-full flex-col overflow-hidden ${
+        highlighted ? "agent-highlight" : ""
       }`}
     >
-      <div className="flex h-28 items-center justify-center bg-gradient-to-br from-emerald-50 via-amber-50 to-rose-50 text-6xl select-none">
-        {p.emoji}
+      <div className={`product-visual product-visual--${p.domain}`}>
+        {p.imageUrl ? (
+          <img src={p.imageUrl} alt={`${p.name} from ${p.merchant}`} loading="lazy" referrerPolicy="no-referrer" onError={(event) => { event.currentTarget.hidden = true; }} />
+        ) : <span>{p.emoji}</span>}
+        <span className="sticker-price absolute right-3 top-3 text-sm">
+          {price}
+        </span>
+        {inCart && (
+          <span className="chip absolute left-3 top-3 !border-leaf-deep bg-leaf text-white">
+            ✓ In cart ×{inCart.qty}
+          </span>
+        )}
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-4">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-semibold leading-snug">{p.name}</h3>
-          <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
-            ${p.price.toFixed(2)}
-          </span>
-        </div>
-        <p className="line-clamp-2 text-xs text-stone-500">{p.description}</p>
-        <div className="mt-auto flex flex-wrap items-center gap-1 pt-2 text-[10px] font-medium">
-          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-stone-600">
-            {p.kcalPerServing} kcal
-          </span>
-          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-stone-600">
-            {p.proteinG}g protein
-          </span>
-          {p.prepMinutes > 0 && (
-            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-stone-600">
-              ⏱ {p.prepMinutes} min
-            </span>
+        <h3 className="font-display text-base font-extrabold leading-snug">{p.name}</h3>
+        <p className="product-merchant">{p.merchant}</p>
+        <p className="line-clamp-3 text-xs font-semibold text-ink-soft">{p.description}</p>
+        {p.recommendation && <p className="product-reason"><strong>Why it fits</strong>{p.recommendation}</p>}
+        {p.tradeoffs?.length ? <p className="product-tradeoff"><strong>Tradeoff</strong>{p.tradeoffs[0]}</p> : null}
+        <div className="mt-auto flex flex-wrap items-center gap-1 pt-2">
+          {p.kcalPerServing != null && (
+            <span className="chip !text-[10px]">{p.kcalPerServing} kcal</span>
           )}
+          {p.proteinG != null && (
+            <span className="chip !text-[10px]">{p.proteinG}g protein</span>
+          )}
+          {p.prepMinutes != null && p.prepMinutes > 0 && (
+            <span className="chip !text-[10px]">Prep {p.prepMinutes} min</span>
+          )}
+          {p.batteryHours != null && (
+            <span className="chip !text-[10px]">Battery {p.batteryHours}h</span>
+          )}
+          {p.noiseCancelling != null && (
+            <span className="chip !text-[10px]">{p.noiseCancelling ? "ANC" : "No ANC"}</span>
+          )}
+          {p.weightG != null && <span className="chip !text-[10px]">{p.weightG}g</span>}
+          {p.tags.includes("multipoint") && <span className="chip !text-[10px]">Multipoint</span>}
+          {p.sizes?.length ? <span className="chip !text-[10px]">Sizes {p.sizes.join("/")}</span> : null}
+          {p.materials?.length ? <span className="chip !text-[10px]">{p.materials.join(" + ")}</span> : null}
+          {p.breathability && <span className="chip !text-[10px]">{p.breathability} breathability</span>}
+          {p.formality && <span className="chip !text-[10px]">{p.formality}</span>}
+          {p.brand && <span className="chip !text-[10px]">{p.brand}</span>}
           {hasAllergen && (
             <span
-              className="rounded-full bg-red-100 px-2 py-0.5 text-red-700"
-              title={`Contains: ${p.allergens
+              className="chip !border-candy-deep bg-candy/15 !text-[10px] text-candy-deep"
+              title={`Contains: ${allergens
                 .filter((a) => preferences.allergens.includes(a))
                 .join(", ")}`}
             >
-              ⚠ allergen
+              Allergen warning
             </span>
           )}
           {dietMatch && (
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">
-              ✓ your diet
+            <span className="chip !border-leaf-deep bg-leaf/15 !text-[10px] text-leaf-deep">
+              Diet match
             </span>
           )}
         </div>
         <button
           onClick={() => addToCart(p.id, 1, "user")}
           aria-label={`Add ${p.name} to cart`}
-          className={`mt-2 w-full rounded-xl px-3 py-2 text-xs font-semibold transition ${
-            inCart
-              ? "bg-emerald-600 text-white hover:bg-emerald-700"
-              : "bg-stone-900 text-white hover:bg-stone-700"
+          className={`btn-chunky mt-3 w-full text-sm text-white ${
+            inCart ? "bg-leaf-deep" : "bg-ink"
           }`}
         >
-          {inCart ? `In cart ×${inCart.qty} — add another` : "Add to cart"}
+          {inCart ? "Add another" : "Add to cart"}
         </button>
+        {p.productUrl && (
+          <a href={p.productUrl} target="_blank" rel="noreferrer" className="merchant-link">
+            View live listing <span aria-hidden>↗</span>
+          </a>
+        )}
       </div>
     </div>
   );

@@ -1,27 +1,23 @@
 import { useEffect, useMemo, useRef } from "react";
-import {
-  CATEGORIES,
-  filteredProducts,
-  useStore,
-} from "../store/useStore";
+import { DOMAIN_CONFIG } from "../data/catalog";
+import { filteredProducts, useStore } from "../store/useStore";
 import ProductCard from "./ProductCard";
 
 export default function ProductGrid() {
+  const domain = useStore((s) => s.domain);
   const filters = useStore((s) => s.filters);
   const highlight = useStore((s) => s.highlight);
   const setFilter = useStore((s) => s.setFilter);
   const clearFilters = useStore((s) => s.clearFilters);
   const clearHighlight = useStore((s) => s.clearHighlight);
 
-  const visible = useMemo(() => filteredProducts(filters), [filters]);
+  const categories = domain ? DOMAIN_CONFIG[domain].categories : ["all"];
+  const visible = useMemo(() => filteredProducts(filters, domain ?? undefined), [filters, domain]);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to the first highlighted card when the agent highlights products.
   useEffect(() => {
     if (!highlight || highlight.ids.length === 0) return;
-    const el = gridRef.current?.querySelector(
-      `[data-product-id="${highlight.ids[0]}"]`,
-    );
+    const el = gridRef.current?.querySelector(`[data-product-id="${highlight.ids[0]}"]`);
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [highlight]);
 
@@ -36,18 +32,16 @@ export default function ProductGrid() {
     filters.tags.length > 0;
 
   return (
-    <section className="flex-1 p-4 sm:p-6" aria-label="Products">
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="flex overflow-hidden rounded-xl border border-stone-200 bg-white">
-          {CATEGORIES.map((c) => (
+    <section className="card-soft flex-1 p-4 sm:p-6" aria-label="Products">
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {categories.map((c) => (
             <button
               key={c}
               onClick={() => setFilter({ category: c, agentFiltered: false })}
               aria-pressed={filters.category === c}
-              className={`px-3 py-2 text-xs font-semibold capitalize transition ${
-                filters.category === c
-                  ? "bg-stone-900 text-white"
-                  : "text-stone-600 hover:bg-stone-100"
+              className={`btn-chunky border-[2.5px] px-3.5 py-1.5 text-xs capitalize shadow-[0_3px_0_rgba(45,27,78,0.9)] ${
+                filters.category === c ? "bg-grape text-white" : "bg-white text-ink"
               }`}
             >
               {c}
@@ -58,12 +52,12 @@ export default function ProductGrid() {
           type="search"
           value={filters.query}
           onChange={(e) => setFilter({ query: e.target.value, agentFiltered: false })}
-          placeholder="Search meals…"
+          placeholder={domain ? `🔍 Search ${DOMAIN_CONFIG[domain].shortLabel.toLowerCase()}…` : "🔍 Search products…"}
           aria-label="Search products"
-          className="w-44 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-400"
+          className="w-48 rounded-full border-[2.5px] border-ink/30 bg-white px-4 py-2 text-xs font-bold text-ink outline-none transition focus:border-grape focus:shadow-[0_0_0_3px_rgba(139,92,246,0.25)]"
         />
         {filters.agentFiltered && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-800">
+          <span className="chip !border-grape-deep bg-grape/15 !text-[11px] text-grape-deep">
             🤖 {filters.note ?? "Filtered by your agent"}
             <button
               onClick={() => {
@@ -71,7 +65,7 @@ export default function ProductGrid() {
                 clearHighlight();
               }}
               aria-label="Clear agent filter"
-              className="ml-1 rounded-full px-1 hover:bg-violet-200"
+              className="ml-1 rounded-full px-1 hover:bg-grape/25"
             >
               ✕
             </button>
@@ -80,43 +74,35 @@ export default function ProductGrid() {
         {hasActiveFilters && !filters.agentFiltered && (
           <button
             onClick={clearFilters}
-            className="rounded-full bg-stone-200 px-3 py-1 text-xs font-semibold text-stone-700 hover:bg-stone-300"
+            className="btn-chunky border-[2.5px] bg-sun px-3 py-1.5 text-[11px] shadow-[0_3px_0_rgba(45,27,78,0.9)]"
           >
-            Clear filters
+            ✨ Clear filters
           </button>
         )}
         {highlight?.note && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+          <span className="chip !border-leaf-deep bg-leaf/15 !text-[11px] text-leaf-deep">
             ✨ {highlight.note}
-            <button
-              onClick={clearHighlight}
-              aria-label="Clear highlight"
-              className="ml-1 rounded-full px-1 hover:bg-emerald-200"
-            >
-              ✕
-            </button>
+            <button onClick={clearHighlight} aria-label="Clear highlight" className="ml-1 rounded-full px-1 hover:bg-leaf/25">✕</button>
           </span>
         )}
       </div>
 
       {visible.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center text-sm text-stone-500">
-          No products match these filters.{" "}
-          <button onClick={clearFilters} className="font-semibold text-emerald-700 underline">
-            Clear filters
-          </button>
+        <div className="rounded-3xl border-[3px] border-dashed border-ink/30 bg-white/70 p-12 text-center">
+          <p className="text-4xl" aria-hidden>🧺</p>
+          <p className="mt-2 text-sm font-bold text-ink-soft">
+            No products match these filters.{" "}
+            <button onClick={clearFilters} className="font-extrabold text-grape-deep underline">
+              Clear filters
+            </button>
+          </p>
         </div>
       ) : (
-        <div
-          ref={gridRef}
-          className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4"
-        >
+        <div ref={gridRef} className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((p) => (
-            <ProductCard
-              key={p.id}
-              id={p.id}
-              highlighted={highlight?.ids.includes(p.id) ?? false}
-            />
+            <div key={p.id}>
+              <ProductCard id={p.id} highlighted={highlight?.ids.includes(p.id) ?? false} />
+            </div>
           ))}
         </div>
       )}

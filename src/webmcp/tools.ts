@@ -1,307 +1,249 @@
-import {
-  checkConstraints,
-  filteredProducts,
-  productById,
-  useStore,
-} from "../store/useStore";
+import { cancelActiveSearch, runCoordinatedSearch } from "../agent/searchCoordinator";
+import { DECISION_QUESTIONS, requiredQuestionIds } from "../decision/questions";
+import { checkConstraints, liveProductById, projectedCart, useStore } from "../store/useStore";
+import { formatCurrencyTotals, formatMoney } from "../utils/money";
+import type { DecisionDomain, Preferences } from "../types";
 
-type Json = Record<string, unknown>;
-
-const text = (payload: unknown) => ({
-  content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
-});
-
-const err = (message: string) => ({
-  content: [{ type: "text", text: JSON.stringify({ error: message }) }],
-  isError: true,
-});
+type ToolResult = { content: { type: string; text: string }[]; isError?: boolean };
+const text = (payload: unknown): ToolResult => ({ content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] });
+const err = (message: string): ToolResult => ({ content: [{ type: "text", text: JSON.stringify({ error: message }) }], isError: true });
 
 function getModelContext(): any | null {
-  const nav = navigator as any;
-  if (nav.modelContext) return nav.modelContext;
-  const doc = document as any;
-  if (doc.modelContext) return doc.modelContext;
-  return null;
+  const nav = typeof navigator === "undefined" ? null : navigator as any;
+  const doc = typeof document === "undefined" ? null : document as any;
+  return nav?.modelContext ?? doc?.modelContext ?? null;
 }
 
-export function webmcpSupported(): boolean {
+export function webmcpSupported() {
   return getModelContext() != null;
 }
 
-function cartPayload() {
-  const s = useStore.getState();
-  const totals = s.cartTotals();
-  return {
-    cart: s.cart.map((i) => {
-      const p = productById(i.productId);
-      return {
-        productId: i.productId,
-        name: p?.name,
-        qty: i.qty,
-        unitPrice: p?.price,
-        kcalPerServing: p?.kcalPerServing,
-        allergens: p?.allergens,
-        status: i.status,
-        source: i.source,
-        reason: i.reason,
-        swappedFromId: i.swappedFromId,
-      };
-    }),
-    totals: {
-      totalPrice: Number(totals.total.toFixed(2)),
-      totalKcal: totals.kcal,
-      itemCount: totals.itemCount,
-      pendingApprovalCount: totals.pendingCount,
-    },
-    note:
-      totals.pendingCount > 0
-        ? `${totals.pendingCount} change(s) are proposed and awaiting the user's approval. The user can approve or reject in the cart panel.`
-        : undefined,
-  };
-}
-
 const productSummary = (id: string) => {
-  const p = productById(id);
-  if (!p) return null;
+  const product = liveProductById(id);
+  if (!product) return null;
   return {
-    id: p.id,
-    name: p.name,
-    category: p.category,
-    price: p.price,
-    kcalPerServing: p.kcalPerServing,
-    proteinG: p.proteinG,
-    allergens: p.allergens,
-    diets: p.diets,
-    tags: p.tags,
-    prepMinutes: p.prepMinutes,
+    ...product,
+    source: product.demoOnly ? "seeded demo" : "live Shopify Global Catalog",
+    priceClaim: `${formatMoney(product.price, product.currency)} listed by ${product.merchant}; shipping and tax may be additional`,
   };
 };
 
+function cartPayload() {
+  const state = useStore.getState();
+  const totals = state.cartTotals();
+  return {
+    confirmedCart: state.cart.map((item) => ({ ...item, product: productSummary(item.productId) })),
+    proposals: state.proposals.map((proposal) => ({
+      ...proposal,
+      product: proposal.productId ? productSummary(proposal.productId) : undefined,
+      from: proposal.removeProductId ? productSummary(proposal.removeProductId) : undefined,
+      to: proposal.addProductId ? productSummary(proposal.addProductId) : undefined,
+    })),
+    totals: {
+      confirmedListedSubtotals: totals.currencyTotals,
+      projectedListedSubtotalsIfApproved: totals.proposedCurrencyTotals,
+      confirmedDisplay: formatCurrencyTotals(totals.currencyTotals),
+      projectedDisplay: formatCurrencyTotals(totals.proposedCurrencyTotals),
+      itemCount: totals.itemCount,
+      pendingApprovalCount: totals.pendingCount,
+      excludes: ["shipping", "tax"],
+    },
+    approvalGate: totals.pendingCount ? "Human approval required" : "No pending proposals",
+  };
+}
+
+async function audited(name: string, _args: unknown, run: () => Promise<ToolResult> | ToolResult) {
+  try {
+    const output = await run();
+    useStore.getState().log("agent", `${name} ${output.isError ? "failed" : "completed"}`, name, output.isError ? "error" : "success");
+    return output;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    useStore.getState().log("agent", `${name} failed · ${message}`, name, "error");
+    return err(`${name} failed: ${message}`);
+  }
+}
+
+const requireDomain = () => useStore.getState().domain ?? null;
+const validDomain = (value: unknown): value is DecisionDomain => value === "meals" || value === "gadgets" || value === "clothing";
+
 let registered = false;
+let registration: Promise<boolean> | null = null;
+const registeredToolNames = new Set<string>();
 
 export async function registerWebMcpTools(): Promise<boolean> {
   if (registered) return true;
+  if (registration) return registration;
   const mc = getModelContext();
   if (!mc) return false;
-  registered = true;
-
-  const store = () => useStore.getState();
 
   const tools = [
     {
-      name: "search-products",
-      description:
-        "Search and filter the Co-Cart meal-kit catalog. Also updates the visible product grid in the UI so the user sees what you found. Use this first to find products matching the user's needs. Allergen and diet values: peanut, tree-nut, gluten, dairy, soy, shellfish, egg, fish, sesame; vegan, vegetarian, gluten-free, keto, high-protein.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          query: { type: "string", description: "Free-text search over names, descriptions, and tags." },
-          category: { type: "string", enum: ["dinner", "lunch", "breakfast", "snack", "dessert"] },
-          maxKcal: { type: "number", description: "Maximum kcal per serving." },
-          minProtein: { type: "number", description: "Minimum protein grams per serving." },
-          maxPrice: { type: "number", description: "Maximum price in USD." },
-          excludeAllergens: {
-            type: "array",
-            items: { type: "string" },
-            description: "Allergens to exclude, e.g. [\"peanut\"].",
-          },
-          diets: { type: "array", items: { type: "string" }, description: "Required diets, e.g. [\"vegan\"]." },
-          tags: { type: "array", items: { type: "string" }, description: "Match any tag, e.g. [\"spicy\", \"quick\"]." },
-          limit: { type: "number", description: "Max results returned (default 12)." },
-        },
-      },
-      execute: async (args: any) => {
+      name: "get-decision-state",
+      description: "Read the visible Co-Cart workflow: category, stage, decision questions and answers, live Shopify results, confirmed cart, and pending human approvals.",
+      inputSchema: { type: "object", properties: {} },
+      execute: async (args: unknown) => audited("get-decision-state", args, () => {
+        const state = useStore.getState();
+        return text({
+          domain: state.domain,
+          stage: state.stage,
+          questions: state.domain ? DECISION_QUESTIONS[state.domain] : [],
+          answers: state.answers,
+          search: { source: "OpenAI agent → Shopify Global Catalog MCP", status: state.stage, events: state.searchEvents, error: state.searchError },
+          liveResults: state.liveProducts.map((product) => productSummary(product.id)),
+          ...cartPayload(),
+        });
+      }),
+    },
+    {
+      name: "select-domain",
+      description: "Select one visible shopping category and open its decision-card workflow. This clears the prior workspace.",
+      inputSchema: { type: "object", properties: { domain: { type: "string", enum: ["meals", "gadgets", "clothing"] } }, required: ["domain"] },
+      execute: async (args: { domain?: unknown }) => audited("select-domain", args, () => {
+        if (!validDomain(args.domain)) return err("domain must be meals, gadgets, or clothing.");
+        cancelActiveSearch();
+        useStore.getState().startDomain(args.domain, false);
+        return text({ message: `Selected ${args.domain}. The visible decision cards are ready.`, questions: DECISION_QUESTIONS[args.domain] });
+      }),
+    },
+    {
+      name: "set-decision-answer",
+      description: "Answer one visible decision card. Use option values from get-decision-state; multiple-choice questions accept at most two values.",
+      inputSchema: { type: "object", properties: { questionId: { type: "string" }, values: { type: "array", items: { type: "string" }, maxItems: 2 } }, required: ["questionId", "values"] },
+      execute: async (args: { questionId?: unknown; values?: unknown }) => audited("set-decision-answer", args, () => {
+        const domain = requireDomain();
+        if (!domain) return err("Choose a category first.");
+        const question = DECISION_QUESTIONS[domain].find((item) => item.id === args.questionId);
+        if (!question || !Array.isArray(args.values)) return err("Unknown decision question or invalid values.");
+        const values = args.values.filter((value): value is string => typeof value === "string");
+        const valid = values.length > 0 && values.length <= (question.multiple ? 2 : 1) && values.every((value) => question.options.some((option) => option.value === value));
+        if (!valid) return err(`Use ${question.multiple ? "one or two" : "one"} valid option value(s) for ${question.id}.`);
+        useStore.getState().setDecisionAnswer(question.id, values);
+        return text({ message: "Decision updated in the visible UI.", questionId: question.id, values });
+      }),
+    },
+    {
+      name: "start-live-search",
+      description: "Start the real OpenAI shopping agent. It searches Shopify Global Catalog through MCP and streams progress into the visible UI. It never falls back to demo data.",
+      inputSchema: { type: "object", properties: {} },
+      execute: async (args: unknown) => audited("start-live-search", args, async () => {
+        const state = useStore.getState();
+        const domain = state.domain;
+        if (!domain) return err("Choose a category first.");
+        if (state.stage === "searching") return err("A live search is already running.");
+        const missing = requiredQuestionIds(domain).filter((id) => !state.answers[id]?.length);
+        if (missing.length) return err(`Answer every visible decision card first. Missing: ${missing.join(", ")}.`);
+        const searchId = state.beginLiveSearch();
+        if (!searchId) return err("A live search is already running.");
         try {
-          const limit = typeof args.limit === "number" ? args.limit : 12;
-          store().setFilter(
-            {
-              query: args.query ?? "",
-              category: args.category ?? "all",
-              maxKcal: args.maxKcal,
-              minProtein: args.minProtein,
-              maxPrice: args.maxPrice,
-              excludeAllergens: args.excludeAllergens ?? [],
-              diets: args.diets ?? [],
-              tags: args.tags ?? [],
-              agentFiltered: true,
-              note: "Filtered by your agent",
-            },
-            "agent",
-          );
-          const matches = filteredProducts(useStore.getState().filters);
-          return text({
-            matchCount: matches.length,
-            products: matches.slice(0, limit).map((p) => productSummary(p.id)),
-            note: "The on-screen product grid now shows these results.",
-          });
-        } catch (e: any) {
-          return err(`search-products failed: ${e?.message ?? e}`);
+          const result = await runCoordinatedSearch(domain, structuredClone(state.answers), { onStatus: (label, detail, status) => useStore.getState().addSearchEvent(searchId, label, detail, status) });
+          if (!useStore.getState().completeLiveSearch(searchId, result.products, result.summary)) return err("The search result was discarded because the shopping category changed.");
+          return text({ source: "live Shopify Global Catalog", summary: result.summary, products: result.products.map((product) => productSummary(product.id)) });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          useStore.getState().failLiveSearch(searchId, message);
+          return err(`${message} No demo fallback was used.`);
         }
-      },
+      }),
+    },
+    {
+      name: "get-live-results",
+      description: "Read only the latest verified live Shopify results. Returns an error until a live agent search succeeds.",
+      inputSchema: { type: "object", properties: {} },
+      execute: async (args: unknown) => audited("get-live-results", args, () => {
+        const state = useStore.getState();
+        if (state.stage !== "results" || !state.liveProducts.length) return err("No completed live Shopify search is available.");
+        return text({ source: "live Shopify Global Catalog", summary: state.searchSummary, products: state.liveProducts.map((product) => productSummary(product.id)) });
+      }),
     },
     {
       name: "get-product",
-      description: "Get full details for one product by its id (from search-products results).",
-      inputSchema: {
-        type: "object",
-        properties: { productId: { type: "string", description: "Product id, e.g. \"p-004\"." } },
-        required: ["productId"],
-      },
-      execute: async (args: any) => {
-        const p = productById(args?.productId);
-        if (!p) return err(`Unknown product id "${args?.productId}". Use search-products to find valid ids.`);
-        return text(p);
-      },
+      description: "Get a full product record from the latest live Shopify shortlist.",
+      inputSchema: { type: "object", properties: { productId: { type: "string" } }, required: ["productId"] },
+      execute: async (args: { productId?: unknown }) => audited("get-product", args, () => {
+        const product = typeof args.productId === "string" ? liveProductById(args.productId) : undefined;
+        if (!product || product.domain !== requireDomain()) return err("Unknown live product id for the active category.");
+        return text(productSummary(product.id));
+      }),
     },
     {
       name: "add-to-cart",
-      description:
-        "Add a product to the cart on the user's behalf. The item is added in a PROPOSED state — the user sees it with an agent badge and must approve it. Always pass a short human-readable reason. After adding everything the user asked for, tell the user what you proposed and ask them to review.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          productId: { type: "string" },
-          qty: { type: "number", description: "Quantity (default 1)." },
-          reason: { type: "string", description: "Why this fits the user's request, e.g. \"380 kcal, peanut-free, $8.99\"." },
-        },
-        required: ["productId"],
-      },
-      execute: async (args: any) => {
-        const r = store().addToCart(args?.productId, args?.qty ?? 1, "agent", args?.reason);
-        if (!r.ok) return err(r.message);
-        return text({ message: r.message, ...cartPayload() });
-      },
+      description: "Propose adding a live result. Agent proposals never modify the confirmed cart until the human approves.",
+      inputSchema: { type: "object", properties: { productId: { type: "string" }, qty: { type: "number" }, reason: { type: "string" } }, required: ["productId", "reason"] },
+      execute: async (args: any) => audited("add-to-cart", args, () => {
+        if (typeof args.productId !== "string" || typeof args.reason !== "string" || !args.reason.trim()) return err("productId and a non-empty reason are required.");
+        const response = useStore.getState().addToCart(args.productId, args.qty ?? 1, "agent", args.reason);
+        return response.ok ? text({ message: response.message, proposalId: response.proposalId, ...cartPayload() }) : err(response.message);
+      }),
     },
     {
       name: "remove-from-cart",
-      description:
-        "Remove an item from the cart. If the user added the item themselves, it becomes a proposed removal (strikethrough) that the user must approve. Always pass a reason.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          productId: { type: "string" },
-          reason: { type: "string", description: "Why remove it, e.g. \"exceeds the kcal limit\"." },
-        },
-        required: ["productId"],
-      },
-      execute: async (args: any) => {
-        const r = store().removeFromCart(args?.productId, "agent", args?.reason);
-        if (!r.ok) return err(r.message);
-        return text({ message: r.message, ...cartPayload() });
-      },
+      description: "Propose removing a confirmed cart item. Human approval is mandatory.",
+      inputSchema: { type: "object", properties: { productId: { type: "string" }, reason: { type: "string" } }, required: ["productId", "reason"] },
+      execute: async (args: any) => audited("remove-from-cart", args, () => {
+        if (typeof args.productId !== "string" || typeof args.reason !== "string" || !args.reason.trim()) return err("productId and a non-empty reason are required.");
+        const response = useStore.getState().removeFromCart(args.productId, "agent", args.reason);
+        return response.ok ? text({ message: response.message, proposalId: response.proposalId, ...cartPayload() }) : err(response.message);
+      }),
     },
     {
       name: "swap-item",
-      description:
-        "Replace one cart item with another product in a single step (e.g. swap out an allergen). The swap appears as a proposal the user must approve. Reason is required and is shown to the user.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          removeProductId: { type: "string", description: "Product id currently in the cart." },
-          addProductId: { type: "string", description: "Replacement product id." },
-          reason: { type: "string", description: "e.g. \"peanut allergy: satay contains peanuts\"" },
-        },
-        required: ["removeProductId", "addProductId", "reason"],
-      },
-      execute: async (args: any) => {
-        const r = store().swapItems(args?.removeProductId, args?.addProductId, args?.reason ?? "");
-        if (!r.ok) return err(r.message);
-        return text({ message: r.message, ...cartPayload() });
-      },
+      description: "Propose an atomic swap between live results. The original item stays confirmed until approval.",
+      inputSchema: { type: "object", properties: { removeProductId: { type: "string" }, addProductId: { type: "string" }, reason: { type: "string" } }, required: ["removeProductId", "addProductId", "reason"] },
+      execute: async (args: any) => audited("swap-item", args, () => {
+        if (typeof args.removeProductId !== "string" || typeof args.addProductId !== "string" || typeof args.reason !== "string" || !args.reason.trim()) return err("Both product ids and a non-empty reason are required.");
+        const response = useStore.getState().swapItems(args.removeProductId, args.addProductId, args.reason);
+        return response.ok ? text({ message: response.message, proposalId: response.proposalId, ...cartPayload() }) : err(response.message);
+      }),
     },
     {
       name: "get-cart",
-      description:
-        "Get the full current cart: items with their status (confirmed / proposed / proposed-removal), reasons, and totals (price, kcal, pending approvals). Use this before checkout or when asked what's in the cart.",
+      description: "Read confirmed cart lines, separate pending proposals, and listed subtotals.",
       inputSchema: { type: "object", properties: {} },
-      execute: async () => text(cartPayload()),
+      execute: async (args: unknown) => audited("get-cart", args, () => text(cartPayload())),
     },
     {
       name: "check-constraints",
-      description:
-        "Validate the current cart against constraints such as total budget, max kcal per item, excluded allergens, and minimum item count. Returns pass/fail per constraint with the ids of violating items so you can fix them (use swap-item or remove-from-cart). Use this to verify your work before asking the user to approve.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          maxTotalPrice: { type: "number" },
-          maxKcalPerItem: { type: "number" },
-          excludeAllergens: { type: "array", items: { type: "string" } },
-          minItems: { type: "number" },
-        },
-      },
-      execute: async (args: any) => {
-        const results = checkConstraints(useStore.getState().cart, {
-          maxTotalPrice: args?.maxTotalPrice,
-          maxKcalPerItem: args?.maxKcalPerItem,
-          excludeAllergens: args?.excludeAllergens,
-          minItems: args?.minItems,
-        });
-        store().log(
-          "agent",
-          `Checked constraints: ${results.map((r) => `${r.label} ${r.pass ? "✓" : "✗"}`).join(", ")}`,
-          "check-constraints",
-        );
-        return text({
-          allPass: results.every((r) => r.pass),
-          results,
-          ...cartPayload().totals,
-        });
-      },
+      description: "Validate the projected cart against explicit numeric or allergen constraints. This checks current live result data; it does not generate recommendations.",
+      inputSchema: { type: "object", properties: { maxTotalPrice: { type: "number", minimum: 0 }, currency: { type: "string", pattern: "^[A-Z]{3}$" }, maxKcalPerItem: { type: "number", minimum: 0 }, excludeAllergens: { type: "array", items: { type: "string" } }, minItems: { type: "number", minimum: 0 } } },
+      execute: async (args: any) => audited("check-constraints", args, () => {
+        const state = useStore.getState();
+        const results = checkConstraints(projectedCart(state.cart, state.proposals), args);
+        return text({ allPass: results.every((item) => item.pass), results, projected: true, ...cartPayload().totals });
+      }),
     },
     {
       name: "set-preferences",
-      description:
-        "Save the user's standing preferences: allergens to always avoid, diets they follow, and weekly budget in USD. Persisted across visits and shown as chips in the header. Call this when the user mentions an allergy, diet, or budget.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          allergens: { type: "array", items: { type: "string" }, description: "e.g. [\"peanut\"]" },
-          diets: { type: "array", items: { type: "string" }, description: "e.g. [\"vegetarian\"]" },
-          weeklyBudget: { type: "number" },
-        },
-      },
-      execute: async (args: any) => {
-        const patch: Json = {};
-        if (Array.isArray(args?.allergens)) patch.allergens = args.allergens;
-        if (Array.isArray(args?.diets)) patch.diets = args.diets;
-        if (typeof args?.weeklyBudget === "number") patch.weeklyBudget = args.weeklyBudget;
-        store().setPreferences(patch);
+      description: "Save standing dietary preferences for cart checks. This does not start or replace the live agent search.",
+      inputSchema: { type: "object", properties: { allergens: { type: "array", items: { type: "string" } }, diets: { type: "array", items: { type: "string" } }, weeklyBudget: { type: "number" } } },
+      execute: async (args: Partial<Preferences>) => audited("set-preferences", args, () => {
+        useStore.getState().setPreferences(args, "agent");
         return text({ message: "Preferences saved.", preferences: useStore.getState().preferences });
-      },
+      }),
     },
     {
       name: "highlight-products",
-      description:
-        "Visually highlight products in the grid (pulsing outline) to show the user which items you're talking about. Use after picking items so the user can see your choices.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          productIds: { type: "array", items: { type: "string" } },
-          note: { type: "string", description: "Short caption, e.g. \"my three picks for you\"" },
-        },
-        required: ["productIds"],
-      },
-      execute: async (args: any) => {
-        const ids = Array.isArray(args?.productIds) ? args.productIds : [];
-        store().setHighlight(ids, args?.note);
-        return text({ message: `Highlighted ${ids.length} product(s) in the grid.` });
-      },
-    },
-    {
-      name: "checkout",
-      description:
-        "Complete the purchase. IMPORTANT: checkout is refused while any proposed change is awaiting the user's approval — call get-cart first, and if pendingApprovalCount > 0, ask the user to approve or reject the proposals instead of retrying.",
-      inputSchema: { type: "object", properties: {} },
-      execute: async () => {
-        const r = store().checkout();
-        if (!r.ok) return err(r.message);
-        return text({ message: r.message });
-      },
+      description: "Highlight products from the latest live shortlist in the visible results.",
+      inputSchema: { type: "object", properties: { productIds: { type: "array", items: { type: "string" } }, note: { type: "string" } }, required: ["productIds"] },
+      execute: async (args: any) => audited("highlight-products", args, () => {
+        useStore.getState().setHighlight(Array.isArray(args.productIds) ? args.productIds : [], args.note);
+        return text({ message: `Highlighted ${useStore.getState().highlight?.ids.length ?? 0} live product(s).` });
+      }),
     },
   ];
 
-  for (const tool of tools) {
-    await mc.registerTool(tool);
-  }
-  return true;
+  registration = (async () => {
+    try {
+      for (const tool of tools) {
+        if (registeredToolNames.has(tool.name)) continue;
+        await mc.registerTool(tool);
+        registeredToolNames.add(tool.name);
+      }
+      registered = true;
+      return true;
+    } finally {
+      registration = null;
+    }
+  })();
+  return registration;
 }

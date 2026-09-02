@@ -1,0 +1,30 @@
+[
+  {
+    "date": "2026-09-02",
+    "macrostructure": "Narrative Workflow with global accessibility sheet",
+    "theme": "Quiet",
+    "enrichment": "none; existing interface preserved",
+    "brief": "Add an opt-in OpenAI Realtime hands-free shopping flow for blind and mobility-limited shoppers"
+  },
+  {
+    "date": "2026-09-02",
+    "macrostructure": "Narrative Workflow",
+    "theme": "Quiet",
+    "enrichment": "verified live Shopify product imagery only",
+    "brief": "Restore readable completed decisions and compact mobile search controls"
+  },
+  {
+    "date": "2026-09-01",
+    "macrostructure": "Workbench",
+    "theme": "Plume",
+    "enrichment": "existing product emoji",
+    "brief": "Repair Co-Cart as a playful, trustworthy multi-domain decision assistant"
+  },
+  {
+    "date": "2026-09-01",
+    "macrostructure": "Narrative Workflow",
+    "theme": "Quiet",
+    "enrichment": "live Shopify product imagery only",
+    "brief": "Domain selection to fading decision cards to visible OpenAI live Shopify search"
+  }
+]

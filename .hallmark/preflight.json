@@ -1,0 +1,10 @@
+{
+  "date": "2026-09-01",
+  "framework": "Vite + React + TypeScript",
+  "styling": "Tailwind CSS v4 with a shared CSS entry point",
+  "fonts": ["Baloo 2", "Nunito"],
+  "palette": "Warm paper, purple ink, pink/orange/mint accents via tokens.css",
+  "motion": "CSS-only, motion-cut, reduced-motion supported",
+  "spacing": "4pt-based scale",
+  "sourceFiles": ["package.json", "src/index.css"]
+}

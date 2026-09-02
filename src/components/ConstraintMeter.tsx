@@ -1,50 +1,35 @@
-import { productById, useStore } from "../store/useStore";
+import { useStore } from "../store/useStore";
+import { formatCurrencyTotals, formatMoney } from "../utils/money";
 
 export default function ConstraintMeter() {
-  const cart = useStore((s) => s.cart);
-  const budget = useStore((s) => s.preferences.weeklyBudget);
-
-  const active = cart.filter((i) => i.status !== "proposed-removal");
-  const total = active.reduce(
-    (sum, i) => sum + (productById(i.productId)?.price ?? 0) * i.qty,
-    0,
-  );
-  const kcal = active.reduce(
-    (sum, i) => sum + (productById(i.productId)?.kcalPerServing ?? 0) * i.qty,
-    0,
-  );
-  const itemCount = active.reduce((n, i) => n + i.qty, 0);
-
-  const pct = Math.min(100, (total / Math.max(budget, 1)) * 100);
-  const over = total > budget;
+  const preferences = useStore((state) => state.preferences);
+  const domain = useStore((state) => state.domain);
+  const cartTotals = useStore((state) => state.cartTotals);
+  const totals = cartTotals();
+  const budget = preferences.weeklyBudget;
+  const single = totals.currencyTotals.length === 1 ? totals.currencyTotals[0] : totals.itemCount === 0 ? { currency: "USD", total: 0 } : null;
+  const comparable = single?.currency === "USD";
+  const percentage = comparable ? Math.min(100, (single.total / Math.max(budget, 1)) * 100) : 0;
+  const over = comparable ? single.total > budget : false;
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
-      <div className="mb-1 flex items-center justify-between text-[11px] font-semibold">
-        <span className="text-stone-600">Weekly budget</span>
-        <span className={over ? "text-red-600" : "text-emerald-700"}>
-          ${total.toFixed(2)} / ${budget.toFixed(2)}
-          {over ? " — over!" : ""}
+    <div className="rounded-2xl border-[2.5px] border-ink/20 bg-cream p-3.5">
+      <div className="mb-1.5 flex items-center justify-between gap-2 text-xs font-extrabold">
+        <span className="text-ink-soft">Listed subtotal</span>
+        <span className={over ? "text-candy-deep" : "text-leaf-deep"}>
+          {comparable ? `${formatMoney(single.total, single.currency)} / ${formatMoney(budget, "USD")}${over ? " — over" : ""}` : formatCurrencyTotals(totals.currencyTotals)}
         </span>
       </div>
-      <div
-        className="h-2 overflow-hidden rounded-full bg-stone-200"
-        role="progressbar"
-        aria-valuenow={Math.round(pct)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label="Budget used"
-      >
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${
-            over ? "bg-red-500" : pct > 80 ? "bg-amber-400" : "bg-emerald-500"
-          }`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <p className="mt-1 text-[11px] text-stone-500">
-        ≈ {kcal.toLocaleString()} kcal across {itemCount} item
-        {itemCount === 1 ? "" : "s"}
+      {comparable ? (
+        <div className="h-3.5 overflow-hidden rounded-full border-2 border-ink bg-white" role="progressbar" aria-valuenow={Math.round(percentage)} aria-valuemin={0} aria-valuemax={100} aria-label="USD budget used">
+          <div className={`budget-progress ${over ? "bg-candy" : percentage > 80 ? "bg-tang" : "bg-leaf"}`} style={{ transform: `scaleX(${percentage / 100})` }} />
+        </div>
+      ) : (
+        <p className="constraint-note">Budget comparison is paused for mixed or non-USD listings; currencies are never added together.</p>
+      )}
+      <p className="mt-1.5 text-[11px] font-bold text-ink-soft">
+        {domain === "meals" && totals.kcal > 0 ? `About ${totals.kcal.toLocaleString()} kcal across ` : "Confirmed cart · "}
+        {totals.itemCount} item{totals.itemCount === 1 ? "" : "s"}
       </p>
     </div>
   );

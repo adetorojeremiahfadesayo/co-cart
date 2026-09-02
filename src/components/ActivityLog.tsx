@@ -6,50 +6,56 @@ export default function ActivityLog() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border-t border-stone-200 bg-white">
+    <div className="card-soft overflow-hidden !rounded-3xl">
       <button
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 sm:px-6"
+        className="flex w-full items-center justify-between px-5 py-3.5 text-sm font-extrabold text-ink transition hover:bg-sun/20"
       >
-        <span>
+        <span className="font-display">
           📜 Activity log{" "}
-          <span className="font-normal text-stone-400">
+          <span className="font-body text-xs font-bold text-ink-soft">
             — every agent action, in the open ({activity.length})
           </span>
         </span>
-        <span aria-hidden>{open ? "▾" : "▴"}</span>
+        <span
+          aria-hidden
+          className={`inline-block transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+        >
+          ▾
+        </span>
       </button>
       {open && (
-        <div className="max-h-48 overflow-y-auto border-t border-stone-100 px-4 py-2 sm:px-6">
+        <div className="max-h-56 overflow-y-auto border-t-2 border-ink/10 px-5 py-3">
           {activity.length === 0 ? (
-            <p className="py-3 text-xs text-stone-400">
-              Nothing yet. Actions by you and your agent will appear here.
+            <p className="py-3 text-xs font-bold text-ink-soft">
+              Nothing yet. Actions by you and your agent will appear here. 🌱
             </p>
           ) : (
-            <ul className="divide-y divide-stone-100">
+            <ul className="divide-y divide-ink/8">
               {activity.map((e) => (
-                <li key={e.id} className="flex items-baseline gap-2 py-1.5 text-xs">
-                  <span className="shrink-0 tabular-nums text-stone-400">{e.time}</span>
+                <li key={e.id} className="flex items-baseline gap-2 py-2 text-xs font-semibold">
+                  <span className="shrink-0 tabular-nums text-ink-soft">{e.time}</span>
                   <span
-                    className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                    className={`chip shrink-0 !text-[10px] ${
                       e.source === "agent"
-                        ? "bg-violet-100 text-violet-700"
+                        ? "!border-grape-deep bg-grape/15 text-grape-deep"
                         : e.source === "user"
-                          ? "bg-sky-100 text-sky-700"
-                          : "bg-stone-100 text-stone-600"
+                          ? "!border-sky-700 bg-sky/15 text-sky-700"
+                          : "text-ink-soft"
                     }`}
                   >
-                    {e.source === "agent" ? "🤖 agent" : e.source === "user" ? "you" : "system"}
+                    {e.source === "agent" ? "🤖 agent" : e.source === "user" ? "😀 you" : "⚙️ system"}
                   </span>
-                  <span className="text-stone-700">
+                  <span className="text-ink">
                     {e.summary}
                     {e.tool && (
-                      <code className="ml-1 rounded bg-stone-100 px-1 text-[10px] text-stone-500">
+                      <code className="ml-1 rounded-md bg-ink/8 px-1.5 py-0.5 text-[10px] font-bold text-ink-soft">
                         {e.tool}
                       </code>
                     )}
                   </span>
+                  {e.outcome && <span className={`activity-outcome activity-outcome--${e.outcome}`}>{e.outcome}</span>}
                 </li>
               ))}
             </ul>

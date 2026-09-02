@@ -3,6 +3,16 @@
   publish = "dist"
 
 [[redirects]]
+  from = "/api/search"
+  to = "/.netlify/functions/search"
+  status = 200
+
+[[redirects]]
+  from = "/api/realtime-session"
+  to = "/.netlify/functions/realtime-session"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
