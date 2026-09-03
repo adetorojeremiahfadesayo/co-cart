@@ -133,6 +133,30 @@ describe("handleLiveSearch", () => {
     expect(secondOpenAiBody.input.some((item: { type?: string }) => item.type === "function_call_output")).toBe(true);
   });
 
+  it("recovers once when the model completes without the required final shortlist", async () => {
+    let openAiCalls = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url === "https://api.openai.com/v1/responses") {
+        openAiCalls += 1;
+        if (openAiCalls === 1) return new Response(JSON.stringify(functionCall()), { status: 200 });
+        if (openAiCalls === 2) return new Response(JSON.stringify({ status: "completed", error: null, output: [{ type: "message", role: "assistant", content: [] }] }), { status: 200 });
+        return new Response(JSON.stringify(finalResponse()), { status: 200 });
+      }
+      if (url === "https://catalog.shopify.com/api/ucp/mcp") {
+        return new Response(JSON.stringify({ jsonrpc: "2.0", id: 1, result: shopifyResult }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    });
+
+    const body = await (await handleLiveSearch(request())).text();
+    expect(body).toContain('"type":"result"');
+    expect(body).toContain("Recovering final shortlist");
+    expect(openAiCalls).toBe(3);
+    const recoveryRequest = JSON.parse(String(vi.mocked(globalThis.fetch).mock.calls[3][1]?.body));
+    expect(recoveryRequest.tool_choice).toBe("none");
+  });
+
   it("retries one transient upstream fetch failure", async () => {
     let calls = 0;
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {

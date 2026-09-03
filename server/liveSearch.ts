@@ -14,6 +14,7 @@ const SEARCH_TIMEOUT_MS = 90_000;
 const RATE_WINDOW_MS = 10 * 60_000;
 const DEFAULT_RATE_LIMIT = 5;
 const DEFAULT_MAX_CONCURRENT = 8;
+const MAX_FINAL_SELECTION_RETRIES = 1;
 const RECOMMENDATION_CLASSES = ["Top-rated choice", "Best value", "Budget hidden gem", "Trusted standard", "Best overall match"] as const;
 
 const productSchema = {
@@ -250,6 +251,14 @@ function extractResponseText(response: JsonObject) {
   }).join("");
 }
 
+function responseOutputTypes(response: JsonObject) {
+  const output = Array.isArray(response.output) ? response.output : [];
+  return output
+    .map(asObject)
+    .map((item) => typeof item?.type === "string" ? item.type : "unknown")
+    .join(", ") || "none";
+}
+
 export function resetLiveSearchGuardsForTests() {
   rateBuckets.clear();
   activeSearches = 0;
@@ -309,6 +318,7 @@ export async function handleLiveSearch(request: Request): Promise<Response> {
       let inputItems: unknown[] = [{ role: "user", content: [{ type: "input_text", text: `Find live Shopify catalog products for the ${domain} domain. Buyer answers:\n${brief}` }] }];
       let toolCallCount = 0;
       let firstRound = true;
+      let finalSelectionRetries = 0;
 
       try {
         updateStatus("Connecting to OpenAI", `Running ${model} with Shopify Global Catalog`);
@@ -343,7 +353,7 @@ export async function handleLiveSearch(request: Request): Promise<Response> {
                 ].join("\n"),
                 input: inputItems,
                 tools: OPENAI_SHOPIFY_FUNCTION_TOOLS,
-                tool_choice: firstRound ? { type: "function", name: "shopify_search_catalog" } : "auto",
+                tool_choice: firstRound ? { type: "function", name: "shopify_search_catalog" } : finalSelectionRetries ? "none" : "auto",
                 text: { format: { type: "json_schema", name: "live_shopify_shortlist", strict: true, schema: outputSchema } },
               }),
             });
@@ -391,7 +401,24 @@ export async function handleLiveSearch(request: Request): Promise<Response> {
 
           if (!functionCalls.length) {
             outputText = extractResponseText(response);
-            break;
+            if (outputText.trim()) break;
+            if (finalSelectionRetries >= MAX_FINAL_SELECTION_RETRIES) {
+              throw new Error(`OpenAI completed after Shopify returned products, but did not provide the required shortlist JSON (response output types: ${responseOutputTypes(response)}).`);
+            }
+            finalSelectionRetries += 1;
+            inputItems = [
+              ...inputItems,
+              ...output,
+              {
+                role: "user",
+                content: [{
+                  type: "input_text",
+                  text: "You have already received verified Shopify results. Do not call more tools. Return the required live_shopify_shortlist JSON now, with one to six sourceId values selected only from the completed Shopify output.",
+                }],
+              },
+            ];
+            updateStatus("Recovering final shortlist", "Shopify results are verified; requesting the required structured selection once more");
+            continue;
           }
 
           if (toolCallCount + functionCalls.length > 6) throw new Error("The shopping agent exceeded the six-call Shopify safety limit.");
