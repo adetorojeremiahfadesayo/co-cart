@@ -408,7 +408,7 @@ That last store test — *"treats missing allergen metadata as unknown rather th
 
 ---
 
-## Engineering notes — things I got wrong first
+## Engineering notes, things I got wrong first
 
 **The fallback was the most dangerous code I wrote.** Version one caught every exception and quietly served seeded products. It felt resilient. It was the worst thing in the repo: a broken OpenAI call and a successful one produced *identical-looking* screens. I couldn't tell live from fake during my own testing, so nobody else could either. The fallback is gone. The live path now fails loudly with a specific, recoverable message. If you can't tell whether a demo is real, it isn't.
 
@@ -419,10 +419,6 @@ That last store test — *"treats missing allergen metadata as unknown rather th
 **Stale searches used to overwrite fresh ones.** Switch category mid-search, and the old request would land and repopulate the screen with the wrong domain's results. Every search now carries an ID and completion is dropped if it's been superseded. `discards completion from a stale search after the category changes` is that bug, pinned in a test so it can't come back.
 
 **An untrusted product description is untrusted input.** Product text comes from third-party merchants and flows into a model's context. The agent is instructed to treat catalog text as data, never instructions — and more importantly it *can't act* on instructions anyway: its only capabilities are the strict `shopify_*` functions the server validates. Prompt injection has nowhere to land.
-
-**I built a beautiful panel showing off the agent tools. Then I deleted it.** A banner, a header button, a modal listing every tool with its last invocation. Genuinely nice UI. But it turned "this page works for agents" into a *feature to be admired* rather than infrastructure that simply exists. Real agent-ready pages won't carry a badge announcing it, the same way sites don't advertise their `robots.txt`. The tools stayed; the theatre went. The instinct to show your work belongs in the README, not in the product surface.
-
-**Making the demo fast almost made it dishonest.** My first cache returned results in ~0 ms and it looked *worse* — a shortlist that materialises instantly reads as hardcoded. Keeping the staged progress beat (~2 s) and falling through to the real search on any off-script answer is what makes fast and honest the same thing.
 
 >>>>>>> 873e30a (Add protected headless MCP search endpoint and batch page tool)
 ---
