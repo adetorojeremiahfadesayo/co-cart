@@ -17,7 +17,7 @@
 ![WebMCP](https://img.shields.io/badge/WebMCP-14%20page%20tools-4C1D95.svg)
 ![OpenAI](https://img.shields.io/badge/OpenAI-Responses%20%2B%20Realtime-10A37F.svg)
 ![Shopify](https://img.shields.io/badge/Shopify-Global%20Catalog%20MCP-95BF47.svg)
-![Tests](https://img.shields.io/badge/tests-35%20passing-2E9C6E.svg)
+![Tests](https://img.shields.io/badge/tests-38%20passing-2E9C6E.svg)
 ![Netlify](https://img.shields.io/badge/Netlify-deployed-00C7B7.svg)
 
 *Built for the WebMCP Challenge*
@@ -376,7 +376,7 @@ The functions bundle straight from `netlify/functions/` with no porting — `ser
 ```bash
 npm run typecheck   # tsc -b
 npm run lint        # oxlint
-npm test            # vitest  → 35 tests, 6 files
+npm test            # vitest  → 38 tests, 7 files
 npm run build       # tsc -b && vite build
 ```
 
