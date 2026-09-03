@@ -112,6 +112,42 @@ const tools = [
       }),
     },
     {
+      name: "set-decision-answers",
+      description: "Answer several visible decision cards in one call. Provide only valid question IDs and values from get-decision-state. All updates are validated before the UI changes.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          answers: {
+            type: "object",
+            additionalProperties: { type: "array", minItems: 1, maxItems: 2, items: { type: "string" } },
+          },
+        },
+        required: ["answers"],
+      },
+      execute: async (args: { answers?: unknown }) => audited("set-decision-answers", args, () => {
+        const domain = requireDomain();
+        if (!domain) return err("Choose a category first.");
+        if (!args.answers || typeof args.answers !== "object" || Array.isArray(args.answers)) return err("answers must be an object keyed by visible decision question IDs.");
+        const supplied = Object.entries(args.answers);
+        if (!supplied.length) return err("Provide at least one decision answer.");
+
+        const updates: [string, string[]][] = [];
+        for (const [questionId, rawValues] of supplied) {
+          const question = DECISION_QUESTIONS[domain].find((item) => item.id === questionId);
+          if (!question || !Array.isArray(rawValues) || rawValues.some((value) => typeof value !== "string")) {
+            return err(`Unknown decision question or invalid values for ${questionId}.`);
+          }
+          const values = rawValues.map((value) => value.trim());
+          if (!isValidAnswerValues(question, values)) {
+            return err(question.kind === "text" ? `Provide one short free-text value for ${question.id}.` : `Use valid option value(s) for ${question.id}.`);
+          }
+          updates.push([question.id, values]);
+        }
+        for (const [questionId, values] of updates) useStore.getState().setDecisionAnswer(questionId, values, "agent");
+        return text({ message: `Updated ${updates.length} visible decision card(s).`, answers: Object.fromEntries(updates) });
+      }),
+    },
+    {
       name: "start-live-search",
       description: "Start the real OpenAI shopping agent. It searches Shopify Global Catalog through MCP and streams progress into the visible UI. It never falls back to demo data.",
       inputSchema: { type: "object", properties: {} },

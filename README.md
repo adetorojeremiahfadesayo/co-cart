@@ -10,10 +10,11 @@
 
 [**🛒 Live app**](https://co-cart-live.netlify.app) ·
 [Architecture](#how-it-actually-works) ·
-[The 13 agent tools](#the-13-tools-the-page-hands-to-an-agent) ·
+[The 14 agent tools](#the-14-tools-the-page-hands-to-an-agent) ·
+[Engineering notes](#engineering-notes--things-i-got-wrong-first)
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-7C5CFF.svg)
-![WebMCP](https://img.shields.io/badge/WebMCP-13%20page%20tools-4C1D95.svg)
+![WebMCP](https://img.shields.io/badge/WebMCP-14%20page%20tools-4C1D95.svg)
 ![OpenAI](https://img.shields.io/badge/OpenAI-Responses%20%2B%20Realtime-10A37F.svg)
 ![Shopify](https://img.shields.io/badge/Shopify-Global%20Catalog%20MCP-95BF47.svg)
 ![Tests](https://img.shields.io/badge/tests-35%20passing-2E9C6E.svg)
@@ -79,8 +80,9 @@ That is the WebMCP experiment here: not “AI added to a shopping page,” but a
 - [What makes it different](#what-makes-it-different)
 - [Why WebMCP is the point, not a checkbox](#why-webmcp-is-the-point-not-a-checkbox)
 - [How it actually works](#how-it-actually-works)
-- [The 13 tools the page hands to an agent](#the-13-tools-the-page-hands-to-an-agent)
+- [The 14 tools the page hands to an agent](#the-14-tools-the-page-hands-to-an-agent)
 - [Using Co-Cart from a WebMCP browser](#using-co-cart-from-a-webmcp-browser)
+- [Using Co-Cart headlessly over MCP](#using-co-cart-headlessly-over-mcp)
 - [Shopping with your voice](#shopping-with-your-voice)
 - [Where the data comes from (provenance)](#where-the-data-comes-from-provenance)
 - [Run it yourself](#run-it-yourself)
@@ -127,7 +129,7 @@ Checkout doesn't charge you. It opens the actual merchant's Shopify checkout, be
 
 **Agents propose; humans dispose.** Confirmed cart lines and agent proposals are separate arrays in the store, and the only paths from one to the other run through a human click. Two tests exist purely to prove a rejected proposal leaves the confirmed cart byte-identical.
 
-**WebMCP is a real action layer, not an AI label.** A WebMCP-enabled browser discovers 13 typed page tools at load. An agent can move through the same six decisions, trigger the real Shopify search, compare verified products, and prepare a cart proposal — all through the shared state the person is looking at. It can help, but it cannot silently take over.
+**WebMCP is a real action layer, not an AI label.** A WebMCP-enabled browser discovers 14 typed page tools at load. An agent can move through the same six decisions, trigger the real Shopify search, compare verified products, and prepare a cart proposal — all through the shared state the person is looking at. It can help, but it cannot silently take over.
 
 **Multiple currencies never get silently added together.** Shopify's global catalog will happily return a $13.99 item and a ₦21,900 item in the same shortlist. Most carts would mash those into one meaningless number. Co-Cart keeps per-currency subtotals separate and displays them separately, because "$35.99 + ₦21,900 = 21,935.99" is a lie with a decimal point in it.
 
@@ -141,7 +143,7 @@ Checkout doesn't charge you. It opens the actual merchant's Shopify checkout, be
 
 ```text
  ┌──────────────────────────────────────────────────────────┐
- │  React decision UI          WebMCP page tools (13)       │
+ │  React decision UI          WebMCP page tools (14)       │
  │  (what a human sees)        (what an agent sees)         │
  └────────────────────────┬─────────────────────────────────┘
                           │  same Zustand store, one truth
@@ -179,12 +181,12 @@ The load-bearing idea is the **narrow waist in the middle**. OpenAI never talks 
 | Agent | **OpenAI Responses API** (`gpt-5.6`) | Tool-calling loop with schema-enforced output |
 | Voice | **OpenAI Realtime** (`gpt-realtime-2.1`) over WebRTC | Ephemeral client secrets — the server key never touches the browser |
 | Catalog | **Shopify Global Catalog MCP** | Real listings, real merchants, real checkout links |
-| Page tools | **WebMCP** (`navigator.modelContext`) | 13 tools registered silently on load |
+| Page tools | **WebMCP** (`navigator.modelContext`) | 14 tools registered silently on load |
 | Hosting | **Netlify** + Netlify Functions | Static frontend and both API endpoints on one free plan |
 
 ---
 
-## The 13 tools the page hands to an agent
+## The 14 tools the page hands to an agent
 
 Every tool maps one-to-one onto something a human can see and do. That constraint is the design: an agent should never have a capability that isn't visible in the UI.
 
@@ -193,6 +195,7 @@ Every tool maps one-to-one onto something a human can see and do. That constrain
 | `get-decision-state` | Read the whole visible workflow — category, stage, questions, answers, results, cart, pending approvals |
 | `select-domain` | Pick a shopping category and open its decision cards |
 | `set-decision-answer` | Answer one card (options, or free text for the delivery address) |
+| `set-decision-answers` | Answer several cards atomically in one round trip |
 | `start-live-search` | Run the real OpenAI → Shopify search, streaming into the visible UI |
 | `get-live-results` | Read the verified shortlist — errors until a live search has actually succeeded |
 | `get-product` | Full record for one product from the current shortlist |
@@ -208,7 +211,7 @@ Three details worth pointing out:
 
 - **Every call is audited.** An `audited()` wrapper logs name, time, and outcome for every invocation, success or failure.
 - **When an agent answers a card, the card flashes and scrolls into view.** You can watch the agent work rather than discovering afterwards that something changed.
-- **The tools are invisible in the UI.** No banner, no "13 tools" panel, no badge. An agent-ready page shouldn't need to advertise it — the tools are just *there* for anything that knows to look.
+- **The tools are invisible in the UI.** No banner, no tools panel, no badge. An agent-ready page shouldn't need to advertise it — the tools are just *there* for anything that knows to look.
 
 Source: [`src/webmcp/tools.ts`](src/webmcp/tools.ts)
 
@@ -232,7 +235,56 @@ await navigator.modelContext.callTool("add-to-cart", { productId: "…" }); // p
 
 **The full-power sequence:** `get-decision-state` → `select-domain` → `set-decision-answer` ×6 → `start-live-search` → `get-live-results` → `highlight-products` → `add-to-cart`. At each step the tool returns structured state, and the page shows the same state to the person. Then stop: `add-to-cart` creates a proposal, not a purchase, because the last decision belongs to a human.
 
-This is why the 13 tools matter to the hackathon: they turn a shopping interface into an **agent-ready, observable, constrained action surface**. They are intentionally silent in the product UI, but they are the core interface for a browser agent.
+The new `set-decision-answers` tool lets an agent submit a complete shopping brief in one validated call rather than making six serial calls. The update is atomic: if one answer is invalid, none of the visible decisions change.
+
+This is why the 14 tools matter to the hackathon: they turn a shopping interface into an **agent-ready, observable, constrained action surface**. They are intentionally silent in the product UI, but they are the core interface for a browser agent.
+
+---
+
+## Using Co-Cart headlessly over MCP
+
+WebMCP is ideal when an agent is already in the browser. For server agents, CLI agents, and other MCP clients that do not load a browser tab, Co-Cart also offers a standards-shaped JSON-RPC MCP endpoint:
+
+```text
+POST https://co-cart-live.netlify.app/api/mcp
+```
+
+It exposes `search_live_catalog`: one sessionless tool that accepts a complete shopping brief and returns the same server-verified Shopify shortlist as the browser flow. It is deliberately stateless: a headless client can search and compare products, but it cannot silently acquire a shopper's browser cart or bypass the human approval gate.
+
+The endpoint supports `initialize`, `notifications/initialized`, `tools/list`, and `tools/call`. Discovery is public; actual live searches require `Authorization: Bearer <COCART_MCP_API_KEY>`. This prevents an anonymous caller from using the endpoint to spend the project's OpenAI budget.
+
+```bash
+# 1. Discover tools
+curl https://co-cart-live.netlify.app/api/mcp \
+  -H "content-type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+# 2. Search with a complete brief
+curl https://co-cart-live.netlify.app/api/mcp \
+  -H "content-type: application/json" \
+  -H "authorization: Bearer YOUR_COCART_MCP_API_KEY" \
+  -d '{
+    "jsonrpc":"2.0",
+    "id":2,
+    "method":"tools/call",
+    "params":{
+      "name":"search_live_catalog",
+      "arguments":{
+        "domain":"gadgets",
+        "answers":{
+          "gadget_type":["wireless headphones"],
+          "decision_style":["crowd favourite"],
+          "store_preference":["no preference"],
+          "gadget_priority":["long battery life"],
+          "budget":["50"],
+          "delivery_address":["12 Admiralty Way, Lekki Phase 1, Lagos, Nigeria"]
+        }
+      }
+    }
+  }'
+```
+
+Set a long random `COCART_MCP_API_KEY` in the Netlify environment before using the production endpoint. The key is server-only and must never use a `VITE_` prefix.
 
 ---
 
@@ -294,6 +346,7 @@ npx tsx scripts/captureDemoCache.ts
 | `OPENAI_API_KEY` | **Required.** Server-side only. | — |
 | `OPENAI_MODEL` | Model for the shopping agent | `gpt-5.6` |
 | `OPENAI_REALTIME_MODEL` | Model for hands-free voice | `gpt-realtime-2.1` |
+| `COCART_MCP_API_KEY` | Required bearer key for protected headless MCP live searches | — |
 | `COCART_SEARCH_RATE_LIMIT` | Live searches per client per 10 min | `5` |
 | `COCART_MAX_CONCURRENT_SEARCHES` | Concurrent searches server-wide | `8` |
 | `COCART_REALTIME_RATE_LIMIT` | Realtime session creations per client | conservative |
@@ -348,6 +401,31 @@ The suite is written as a **spec for the trust boundary**, so the test names rea
 ✓ keeps an agent cart change pending until the exact approval phrase
 ✓ cannot confirm a plan while proposals are unresolved
 ✓ creates a scoped Realtime client secret without exposing the server key
+<<<<<<< HEAD
+=======
+```
+
+That last store test — *"treats missing allergen metadata as unknown rather than safe"* — is a small line with a big principle behind it. Absence of an allergen warning is not evidence of absence. For food, guessing optimistically is the one bug you genuinely cannot ship.
+
+---
+
+## Engineering notes — things I got wrong first
+
+**The fallback was the most dangerous code I wrote.** Version one caught every exception and quietly served seeded products. It felt resilient. It was the worst thing in the repo: a broken OpenAI call and a successful one produced *identical-looking* screens. I couldn't tell live from fake during my own testing, so nobody else could either. The fallback is gone. The live path now fails loudly with a specific, recoverable message. If you can't tell whether a demo is real, it isn't.
+
+**Letting the model describe products was the second mistake.** The obvious design is to ask for a nice JSON shortlist with titles and prices. It works, right up until you diff it against the Shopify response and find prices drifting by a few dollars — not hallucinated exactly, just *smoothed*. Now the model returns IDs and prose only, and the server rebuilds every fact. This is also why `parallel_tool_calls` is off: sequential calls make the evidence chain auditable.
+
+**Currency ruined a perfectly good subtotal.** Shopify's global catalog returned a $13.99 pouch and a ₦21,900 pouch in the same shortlist and my cart cheerfully summed them. The fix wasn't picking a currency — it was accepting that a cart can hold several and rendering them separately. Multi-currency is a real shopping problem I nearly papered over with `.toFixed(2)`.
+
+**Stale searches used to overwrite fresh ones.** Switch category mid-search, and the old request would land and repopulate the screen with the wrong domain's results. Every search now carries an ID and completion is dropped if it's been superseded. `discards completion from a stale search after the category changes` is that bug, pinned in a test so it can't come back.
+
+**An untrusted product description is untrusted input.** Product text comes from third-party merchants and flows into a model's context. The agent is instructed to treat catalog text as data, never instructions — and more importantly it *can't act* on instructions anyway: its only capabilities are the strict `shopify_*` functions the server validates. Prompt injection has nowhere to land.
+
+**I built a beautiful panel showing off the agent tools. Then I deleted it.** A banner, a header button, a modal listing every tool with its last invocation. Genuinely nice UI. But it turned "this page works for agents" into a *feature to be admired* rather than infrastructure that simply exists. Real agent-ready pages won't carry a badge announcing it, the same way sites don't advertise their `robots.txt`. The tools stayed; the theatre went. The instinct to show your work belongs in the README, not in the product surface.
+
+**Making the demo fast almost made it dishonest.** My first cache returned results in ~0 ms and it looked *worse* — a shortlist that materialises instantly reads as hardcoded. Keeping the staged progress beat (~2 s) and falling through to the real search on any off-script answer is what makes fast and honest the same thing.
+
+>>>>>>> 873e30a (Add protected headless MCP search endpoint and batch page tool)
 ---
 
 ## Project layout
@@ -355,7 +433,7 @@ The suite is written as a **spec for the trust boundary**, so the test names rea
 ```text
 co-cart/
 ├─ src/
-│  ├─ webmcp/tools.ts        ← the 13 agent tools, audited + guarded
+│  ├─ webmcp/tools.ts        ← the 14 agent tools, audited + guarded
 │  ├─ voice/                 ← Realtime agent, spoken tool surface, events
 │  ├─ agent/
 │  │  ├─ liveSearch.ts       ← NDJSON stream client + warmed-cache replay
@@ -370,6 +448,7 @@ co-cart/
 │  └─ index.css + tokens.css ← the design system
 ├─ server/
 │  ├─ liveSearch.ts          ← the agent loop, guards, fact reconstruction
+│  ├─ mcp.ts                 ← protected headless MCP JSON-RPC endpoint
 │  ├─ shopifyMcp.ts          ← strict function schemas + JSON-RPC executor
 │  └─ *.test.ts              ← the trust-boundary spec
 ├─ netlify/functions/        ← thin wrappers over the same handlers
@@ -377,6 +456,24 @@ co-cart/
 └─ public/demo-cache/        ← real captured results, 3 domains
 ```
 
+<<<<<<< HEAD
+=======
+---
+
+## Honest limitations
+
+Because a README that only lists strengths isn't worth reading:
+
+- **The delivery address is demo-grade.** Shopify's catalog filter takes a *country*, not a street. The field accepts free text and derives the country from it — which is exactly what every checkout does, but it isn't validating that your street exists.
+- **The warmed snapshots age.** Real data, captured on a specific day. Re-capture before a demo that matters.
+- **WebMCP is still a proposal.** `navigator.modelContext` isn't in stable browsers yet, so the tool surface only lights up in a WebMCP-enabled host. That's a bet on where the web is going, and I'm comfortable making it.
+- **Headless MCP is intentionally search-only.** It returns verified results to server or CLI agents, but has no persistent user/cart identity. Browser-side WebMCP remains the right interface when a shopper is present to review proposals.
+- **The shortlist caps at six.** Deliberate — the whole point is reducing choice — but it means Co-Cart is a decision tool, not a search engine.
+- **Live searches cost real money.** Every **Go** is a billed OpenAI run. Hence the rate limits, the concurrency cap, and the six-call ceiling.
+
+---
+
+>>>>>>> 873e30a (Add protected headless MCP search endpoint and batch page tool)
 ## License
 
 MIT — see [LICENSE](LICENSE). Take it apart, learn from it, build something better.

@@ -2,6 +2,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, loadEnv } from 'vite'
 import { handleLiveSearch } from './server/liveSearch.ts'
+import { handleMcp } from './server/mcp.ts'
 import { handleRealtimeSession } from './server/realtimeSession.ts'
 
 function liveSearchDevApi() {
@@ -30,6 +31,7 @@ function liveSearchDevApi() {
     name: 'co-cart-live-search-api',
     configureServer(server: { middlewares: { use: (path: string, handler: (request: any, response: any) => void) => void } }) {
       server.middlewares.use('/api/search', bridge(handleLiveSearch))
+      server.middlewares.use('/api/mcp', bridge(handleMcp))
       server.middlewares.use('/api/realtime-session', bridge(handleRealtimeSession))
     },
   }
