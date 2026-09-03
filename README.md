@@ -6,12 +6,11 @@
 
 **An AI agent that shops for you**
 
-*You answer six plain questions — by tapping or by speaking. A real agent searches live Shopify stores. Every price on your screen came from a merchant, not a model. And nothing enters your cart until you say yes.*
+*You answer six plain questions, by tapping or by speaking. A real agent searches live Shopify stores. Every price on your screen came from a merchant, not a model. And nothing enters your cart until you say yes.*
 
 [**🛒 Live app**](https://co-cart-live.netlify.app) ·
 [Architecture](#how-it-actually-works) ·
 [The 13 agent tools](#the-13-tools-the-page-hands-to-an-agent) ·
-[Engineering notes](#engineering-notes--things-i-got-wrong-first)
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-7C5CFF.svg)
 ![WebMCP](https://img.shields.io/badge/WebMCP-13%20page%20tools-4C1D95.svg)
@@ -50,9 +49,11 @@ The second thing: an agent that can shop should never be able to *buy*. Every ca
 
 ## Why WebMCP is the point, not a checkbox
 
-Co-Cart is built for a near future where a shopper's agent is not merely reading a webpage — it is **using the webpage on the shopper's behalf**.
+Co-Cart is built for a near future where a shopper's agent is not merely reading a webpage, it is **using the webpage on the shopper's behalf**.
 
 A normal shopping site gives an AI a wall of pixels, ambiguous buttons, and product copy it has to guess how to interpret. Co-Cart gives a WebMCP-capable agent a small, explicit action layer through `navigator.modelContext`: read the current shopping state, answer the same decision cards a person sees, start a verified live search, inspect the resulting shortlist, and propose a cart change.
+
+You can also use the voice mode for blind or low-vision shopper, someone with limited motor control, or anyone who simply cannot use a keyboard in the moment, the agent can say what screen they are on, read out the available choices, accept a spoken answer, explain the live shortlist, and describe the next safe action. The person does not need to find a card, read a tiny price, or type a search query before the agent can help.
 
 That distinction matters:
 
@@ -68,7 +69,7 @@ Agent can overreach at checkout         Cart changes remain proposals for a huma
 
 The human interface and agent interface are deliberately connected to the **same Zustand store**. There is no hidden “agent mode” with extra powers. If the agent selects *quick dinner*, the same card changes on screen. If it highlights a product, the person sees it. If it proposes an addition, the person still has the final approve/reject decision.
 
-That is the WebMCP experiment here: not “AI added to a shopping page,” but a page that is legible and useful to both a person and their agent — without giving either side an unearned level of trust.
+That is the WebMCP experiment here: not “AI added to a shopping page,” but a page that is legible and useful to both a person and their agent, without giving either side an unearned level of trust.
 
 ---
 
@@ -97,7 +98,7 @@ That is the WebMCP experiment here: not “AI added to a shopping page,” but a
 
 Open [co-cart-live.netlify.app](https://co-cart-live.netlify.app). Pick **Meals**, **Gadgets**, or **Clothing**.
 
-You get six decision cards. Not a search box — cards, in plain English, because "what are you actually trying to solve" is a better question than "what keywords do you know":
+You get six decision cards. Not a search box, cards, in plain English, because "what are you actually trying to solve" is a better question than "what keywords do you know":
 
 ```text
 What would make eating easier for you right now?     → Quick dinner
@@ -108,7 +109,7 @@ What is the comfortable ceiling?                     → Under $25
 Where should it arrive?                              → [demo address prefilled]
 ```
 
-That third question — **how should the agent choose for you** — is the one I'm proudest of. *Crowd favourite*, *best value*, *cheap but a hidden gem*, *the industry standard*. Most shopping tools decide what "best" means on your behalf and never tell you. This one asks. And your answer genuinely changes which items come back and how each is labelled.
+That third question,  **how should the agent choose for you**, is the one I'm proudest of. *Crowd favourite*, *best value*, *cheap but a hidden gem*, *the industry standard*. Most shopping tools decide what "best" means on your behalf and never tell you. This one asks. And your answer genuinely changes which items come back and how each is labelled.
 
 Press **Go**, and you watch it work: connecting to OpenAI → searching Shopify Global Catalog → verifying finalists. Then a shortlist of real products, each with an honest reason it's there *and* the tradeoffs — the pouch that says "53 g protein" is quietly measuring two servings, and Co-Cart says so.
 
@@ -123,8 +124,6 @@ Checkout doesn't charge you. It opens the actual merchant's Shopify checkout, be
 **The model never writes a product fact.** It returns `sourceId: "gid://shopify/ProductVariant/40193175978117"` and a recommendation. The server pairs that ID with Shopify's actual response and builds the product card from merchant data. A test called *"rejects a model selection that is absent from Shopify output"* keeps this honest, permanently.
 
 **A successful `search_catalog` call is mandatory.** The agent can't get clever, skip the search, call a different Shopify function, and hand back a shortlist. No verified search, no results. There's a test for that too.
-
-**There is no demo fallback on the live path.** This is the decision I'd defend hardest. If the API key is missing, or OpenAI fails, or Shopify is unreachable — you get an explicit, recoverable error that says exactly what broke. You never get seeded data quietly dressed up as live results. A demo that fails visibly is worth more than one that fails beautifully.
 
 **Agents propose; humans dispose.** Confirmed cart lines and agent proposals are separate arrays in the store, and the only paths from one to the other run through a human click. Two tests exist purely to prove a rejected proposal leaves the confirmed cart byte-identical.
 
@@ -235,8 +234,6 @@ await navigator.modelContext.callTool("add-to-cart", { productId: "…" }); // p
 
 This is why the 13 tools matter to the hackathon: they turn a shopping interface into an **agent-ready, observable, constrained action surface**. They are intentionally silent in the product UI, but they are the core interface for a browser agent.
 
-No WebMCP browser handy? The hands-free voice mode drives the exact same tool surface, so you can demo the agent path in any browser with a microphone.
-
 ---
 
 ## Shopping with your voice
@@ -249,7 +246,7 @@ Press **Shop by voice** on any screen. The microphone stays off until the shoppe
 
 Your audio goes over WebRTC straight to an OpenAI Realtime session. The agent reads the current screen through the same guarded tools that power WebMCP, speaks the available options aloud, records exact choices, runs the same verified live search as the **Go** button, reads the results back, and can create cart proposals. Voice users are not sent down a weaker “accessible fallback” path — they get the same live catalog, verification rules, and human approval gate as everyone else.
 
-High-stakes actions need **exact spoken phrases** — a fuzzy "yeah okay sure" doesn't move money-adjacent state:
+High-stakes actions need **exact spoken phrases**,  a fuzzy "yeah okay sure" doesn't move money-adjacent state:
 
 | To do this | You must say |
 | :--- | :--- |
@@ -260,23 +257,6 @@ High-stakes actions need **exact spoken phrases** — a fuzzy "yeah okay sure" d
 Confirming a plan still never submits payment. You can interrupt the agent, mute, ask it to repeat the screen, or end the session at any point. The goal is not to make the agent decide for a disabled shopper; it is to remove the visual and typing barriers that would otherwise stop that shopper from making their own decision.
 
 Source: [`src/voice/tools.ts`](src/voice/tools.ts) · [`src/voice/realtimeAgent.ts`](src/voice/realtimeAgent.ts)
-
----
-
-## Where the data comes from (provenance)
-
-I care about this more than any feature, so it gets its own section.
-
-**On the live path, every product fact is reconstructed server-side from Shopify's response.** The model contributes exactly two things: which variant IDs made the shortlist, and the prose explaining why. Titles, prices, currencies, merchants, images, and checkout links are never model-written.
-
-**Warmed demo snapshots.** Judges and first-time visitors get about 30 seconds of attention, and a cold live agent run takes 10–30 seconds of it. So the three default answer paths (one per category) have **pre-captured snapshots in [`public/demo-cache/`](public/demo-cache)** — and I want to be precise about what those are:
-
-- They are **real results from real live searches**. I ran the genuine OpenAI → Shopify pipeline via [`scripts/captureDemoCache.ts`](scripts/captureDemoCache.ts) and saved exactly what came back — real merchants, real Shopify CDN images, real checkout URLs.
-- They replay in **~2 seconds**, with the connecting → searching → verifying beat still visible, because instant results look *more* fake, not less.
-- **Any deviation from the default path falls straight through to the real live search.** Change one answer and you're on the live pipeline again.
-- They are a **snapshot in time** — prices and availability from capture day. Re-run `npx tsx scripts/captureDemoCache.ts` and redeploy to refresh.
-
-**What is never faked:** static catalog JSON in `src/data/` exists only for isolated ranking tests and one explicitly-named demo adapter. Live product lookup, results, cart actions, highlighting, and voice lookup accept *current live products only*. There is no automatic demo fallback anywhere on the live path.
 
 ---
 
@@ -368,28 +348,6 @@ The suite is written as a **spec for the trust boundary**, so the test names rea
 ✓ keeps an agent cart change pending until the exact approval phrase
 ✓ cannot confirm a plan while proposals are unresolved
 ✓ creates a scoped Realtime client secret without exposing the server key
-```
-
-That last store test — *"treats missing allergen metadata as unknown rather than safe"* — is a small line with a big principle behind it. Absence of an allergen warning is not evidence of absence. For food, guessing optimistically is the one bug you genuinely cannot ship.
-
----
-
-## Engineering notes — things I got wrong first
-
-**The fallback was the most dangerous code I wrote.** Version one caught every exception and quietly served seeded products. It felt resilient. It was the worst thing in the repo: a broken OpenAI call and a successful one produced *identical-looking* screens. I couldn't tell live from fake during my own testing, so nobody else could either. The fallback is gone. The live path now fails loudly with a specific, recoverable message. If you can't tell whether a demo is real, it isn't.
-
-**Letting the model describe products was the second mistake.** The obvious design is to ask for a nice JSON shortlist with titles and prices. It works, right up until you diff it against the Shopify response and find prices drifting by a few dollars — not hallucinated exactly, just *smoothed*. Now the model returns IDs and prose only, and the server rebuilds every fact. This is also why `parallel_tool_calls` is off: sequential calls make the evidence chain auditable.
-
-**Currency ruined a perfectly good subtotal.** Shopify's global catalog returned a $13.99 pouch and a ₦21,900 pouch in the same shortlist and my cart cheerfully summed them. The fix wasn't picking a currency — it was accepting that a cart can hold several and rendering them separately. Multi-currency is a real shopping problem I nearly papered over with `.toFixed(2)`.
-
-**Stale searches used to overwrite fresh ones.** Switch category mid-search, and the old request would land and repopulate the screen with the wrong domain's results. Every search now carries an ID and completion is dropped if it's been superseded. `discards completion from a stale search after the category changes` is that bug, pinned in a test so it can't come back.
-
-**An untrusted product description is untrusted input.** Product text comes from third-party merchants and flows into a model's context. The agent is instructed to treat catalog text as data, never instructions — and more importantly it *can't act* on instructions anyway: its only capabilities are the strict `shopify_*` functions the server validates. Prompt injection has nowhere to land.
-
-**I built a beautiful panel showing off the 13 agent tools. Then I deleted it.** A banner, a header button, a modal listing every tool with its last invocation. Genuinely nice UI. But it turned "this page works for agents" into a *feature to be admired* rather than infrastructure that simply exists. Real agent-ready pages won't carry a badge announcing it, the same way sites don't advertise their `robots.txt`. The tools stayed; the theatre went. The instinct to show your work belongs in the README, not in the product surface.
-
-**Making the demo fast almost made it dishonest.** My first cache returned results in ~0 ms and it looked *worse* — a shortlist that materialises instantly reads as hardcoded. Keeping the staged progress beat (~2 s) and falling through to the real search on any off-script answer is what makes fast and honest the same thing.
-
 ---
 
 ## Project layout
@@ -418,21 +376,6 @@ co-cart/
 ├─ scripts/captureDemoCache.ts
 └─ public/demo-cache/        ← real captured results, 3 domains
 ```
-
----
-
-## Honest limitations
-
-Because a README that only lists strengths isn't worth reading:
-
-- **The delivery address is demo-grade.** Shopify's catalog filter takes a *country*, not a street. The field accepts free text and derives the country from it — which is exactly what every checkout does, but it isn't validating that your street exists.
-- **The warmed snapshots age.** Real data, captured on a specific day. Re-capture before a demo that matters.
-- **WebMCP is still a proposal.** `navigator.modelContext` isn't in stable browsers yet, so the tool surface only lights up in a WebMCP-enabled host. That's a bet on where the web is going, and I'm comfortable making it.
-- **Tools are browser-side only.** A headless agent that never loads the page sees nothing. A server-side MCP endpoint is the obvious next build.
-- **The shortlist caps at six.** Deliberate — the whole point is reducing choice — but it means Co-Cart is a decision tool, not a search engine.
-- **Live searches cost real money.** Every **Go** is a billed OpenAI run. Hence the rate limits, the concurrency cap, and the six-call ceiling.
-
----
 
 ## License
 
