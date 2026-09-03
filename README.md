@@ -4,7 +4,7 @@
 
 # Co-Cart
 
-**An AI agent that shops with you — and can't make anything up.**
+**An AI agent that shops for you **
 
 *You answer six plain questions. A real agent searches live Shopify stores. Every price on your screen came from a merchant, not a model. And nothing enters your cart until you say yes.*
 
@@ -25,6 +25,8 @@
 </div>
 
 ---
+**YOUTUBE DEMO**:
+---
 
 ## The moment that started this
 
@@ -34,13 +36,13 @@ It came back with five options. Beautifully written. Confident. Prices, brand na
 
 Three of the five didn't exist.
 
-Not "out of stock" — **didn't exist**. Plausible names at plausible prices from plausible-sounding stores, assembled by a model that had been asked to be helpful and had no way to check. The two that were real had prices from whenever its training data was frozen.
+Not "out of stock", **didn't exist**. Plausible names at plausible prices from plausible-sounding stores, assembled by a model that had been asked to be helpful and had no way to check. The two that were real had prices from whenever its training data was frozen.
 
 That's the thing nobody says out loud about AI shopping: the model isn't lying, it's *pattern-matching*. And a pattern-matched price is indistinguishable from a real one right up until you click through and find nothing there.
 
 So I built the opposite.
 
-**In Co-Cart, the model is never allowed to write a product fact.** It picks Shopify variant IDs — that's all. The server takes those IDs, goes back to Shopify's own response, and reconstructs the title, price, currency, merchant, image, and checkout link from the merchant's data. If the model names a product that isn't in the Shopify output, the request is rejected. Not corrected — **rejected**.
+**In Co-Cart, the model is never allowed to write a product fact.** It picks Shopify variant IDs, that's all. The server takes those IDs, goes back to Shopify's own response, and reconstructs the title, price, currency, merchant, image, and checkout link from the merchant's data. If the model names a product that isn't in the Shopify output, the request is rejected. Not corrected, **rejected**.
 
 The second thing: an agent that can shop should never be able to *buy*. Every cart change an agent makes lands as a **proposal** with approve/reject buttons. Your confirmed cart cannot move without your click. Not as a setting. As an architecture.
 
@@ -210,7 +212,7 @@ No WebMCP browser handy? The hands-free voice mode drives the exact same tool su
 
 ## Shopping with your voice
 
-Press **Shop by voice** on any screen. The mic stays off until you open the panel and press start — that's a hard rule, not a preference.
+Press **Shop by voice** on any screen. The mic stays off until you open the panel and press start, that's a hard rule, not a preference.
 
 Your audio goes over WebRTC straight to an OpenAI Realtime session. The agent reads the current screen through the same guarded tools, speaks your options aloud, records your exact choices, runs the same live search the **Go** button runs, reads results back, and can create cart proposals.
 
