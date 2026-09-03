@@ -10,7 +10,7 @@
 
 [**🛒 Live app**](https://co-cart-live.netlify.app) ·
 [Architecture](#how-it-actually-works) ·
-[The 14 agent tools](#the-14-tools-the-page-hands-to-an-agent) ·
+[The 14 Co-Cart tools](#the-14-co-cart-tools-the-page-hands-to-an-agent) ·
 [Engineering notes](#engineering-notes--things-i-got-wrong-first)
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-7C5CFF.svg)
@@ -52,9 +52,9 @@ The second thing: an agent that can shop should never be able to *buy*. Every ca
 
 Co-Cart is built for a near future where a shopper's agent is not merely reading a webpage, it is **using the webpage on the shopper's behalf**.
 
-A normal shopping site gives an AI a wall of pixels, ambiguous buttons, and product copy it has to guess how to interpret. Co-Cart gives a WebMCP-capable agent a small, explicit action layer through `navigator.modelContext`: read the current shopping state, answer the same decision cards a person sees, start a verified live search, inspect the resulting shortlist, and propose a cart change.
+A normal shopping site gives an AI a wall of pixels, ambiguous buttons, and product copy it has to guess how to interpret. **WebMCP does not prescribe a fixed catalogue of tools**; it gives a website the browser API (`navigator.modelContext`) to declare its own capabilities. Co-Cart uses that API to define 14 shopping-specific tools: an agent can read the current shopping state, answer the same decision cards a person sees, start a verified live search, inspect the resulting shortlist, and propose a cart change.
 
-You can also use the voice mode for blind or low-vision shopper, someone with limited motor control, or anyone who simply cannot use a keyboard in the moment, the agent can say what screen they are on, read out the available choices, accept a spoken answer, explain the live shortlist, and describe the next safe action. The person does not need to find a card, read a tiny price, or type a search query before the agent can help.
+The same action layer also powers voice mode. For a blind or low-vision shopper, someone with limited motor control, or anyone who cannot use a keyboard in the moment, the agent can say what screen they are on, read out the choices, accept a spoken answer, explain the live shortlist, and describe the next safe action. The person does not need to find a card, read a tiny price, or type a search query before the agent can help.
 
 That distinction matters:
 
@@ -80,11 +80,10 @@ That is the WebMCP experiment here: not “AI added to a shopping page,” but a
 - [What makes it different](#what-makes-it-different)
 - [Why WebMCP is the point, not a checkbox](#why-webmcp-is-the-point-not-a-checkbox)
 - [How it actually works](#how-it-actually-works)
-- [The 14 tools the page hands to an agent](#the-14-tools-the-page-hands-to-an-agent)
+- [The 14 Co-Cart tools the page hands to an agent](#the-14-co-cart-tools-the-page-hands-to-an-agent)
 - [Using Co-Cart from a WebMCP browser](#using-co-cart-from-a-webmcp-browser)
 - [Using Co-Cart headlessly over MCP](#using-co-cart-headlessly-over-mcp)
 - [Shopping with your voice](#shopping-with-your-voice)
-- [Where the data comes from (provenance)](#where-the-data-comes-from-provenance)
 - [Run it yourself](#run-it-yourself)
 - [Configuration](#configuration)
 - [Deploy](#deploy)
@@ -186,9 +185,9 @@ The load-bearing idea is the **narrow waist in the middle**. OpenAI never talks 
 
 ---
 
-## The 14 tools the page hands to an agent
+## The 14 Co-Cart tools the page hands to an agent
 
-Every tool maps one-to-one onto something a human can see and do. That constraint is the design: an agent should never have a capability that isn't visible in the UI.
+These are **Co-Cart's custom WebMCP tools**, not a list supplied by WebMCP. WebMCP is the browser mechanism that lets the site register them; Co-Cart chooses the 14 actions that make sense for its shopping flow. Every one maps one-to-one onto something a human can see and do. That constraint is the design: an agent should never have a capability that isn't visible in the UI.
 
 | Tool | What it does |
 | :--- | :--- |
@@ -219,7 +218,7 @@ Source: [`src/webmcp/tools.ts`](src/webmcp/tools.ts)
 
 ## Using Co-Cart from a WebMCP browser
 
-Co-Cart registers its tools on `navigator.modelContext` at load. Nothing to click, nothing to enable — the agent host discovers them as part of the page.
+Co-Cart registers its 14 custom tools on `navigator.modelContext` at load. Nothing to click, nothing to enable — the agent host discovers them as part of the page. WebMCP itself does not come with built-in tools; it gives this website a standard way to expose its own safe, typed actions to an agent.
 
 Open [co-cart-live.netlify.app](https://co-cart-live.netlify.app) in a WebMCP-enabled browser or agent host and the tools are discoverable immediately. The host can give an agent a request such as “find crowd-favourite wireless headphones under $50,” and the agent can operate the flow through explicit tools rather than unreliable visual guessing. From an agent (or the console, host API depending):
 
