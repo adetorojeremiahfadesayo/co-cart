@@ -4,7 +4,7 @@
 
 # Co-Cart
 
-**An AI agent that shops for you **
+**An AI agent that shops for you**
 
 *You answer six plain questions. A real agent searches live Shopify stores. Every price on your screen came from a merchant, not a model. And nothing enters your cart until you say yes.*
 
