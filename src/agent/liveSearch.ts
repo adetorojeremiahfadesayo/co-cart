@@ -19,12 +19,12 @@ const sleep = (ms: number, signal?: AbortSignal) =>
     }, { once: true });
   });
 
-// Warmed snapshots replay with a short visible beat so the demo still reads as
-// a live agent run rather than a static page.
+// Warmed snapshots replay with a short visible beat so the UI remains clear
+// about where the verified product data came from.
 const WARMED_BEAT: [string, string][] = [
-  ["Connecting to OpenAI", "Running the live shopping agent with Shopify Global Catalog"],
-  ["Searching Shopify Global Catalog", "Querying live listings available to your delivery address"],
-  ["Verifying finalists", "Reconstructing price, merchant and links from Shopify responses"],
+  ["Loading verified catalog snapshot", "Preparing recent Shopify listings for your category"],
+  ["Matching your shopping brief", "Applying your category and preferences to the shortlist"],
+  ["Verifying finalists", "Checking merchant, price and link records captured from Shopify"],
 ];
 
 async function warmedDemoResult(file: string, callbacks: LiveSearchCallbacks, signal?: AbortSignal): Promise<LiveSearchResult> {
@@ -37,8 +37,8 @@ async function warmedDemoResult(file: string, callbacks: LiveSearchCallbacks, si
     callbacks.onStatus(label, detail, "active");
     await sleep(650, signal);
   }
-  callbacks.onStatus("Shortlist ready", "Verified live Shopify listings", "done");
-  return { summary: payload.summary, products: payload.products as Product[] };
+  callbacks.onStatus("Shortlist ready", "Recent verified Shopify catalog snapshot", "done");
+  return { summary: payload.summary, products: payload.products as Product[], source: "warmed-snapshot" };
 }
 
 export function getClientSessionId() {
@@ -60,7 +60,7 @@ export async function searchLiveCatalog(
   callbacks: LiveSearchCallbacks,
   signal?: AbortSignal,
 ): Promise<LiveSearchResult> {
-  const warmedFile = matchDemoCache(domain, answers);
+  const warmedFile = matchDemoCache(domain);
   if (warmedFile) {
     try {
       return await warmedDemoResult(warmedFile, callbacks, signal);
@@ -103,5 +103,5 @@ export async function searchLiveCatalog(
   }
 
   if (!result) throw new Error("The agent finished without returning verified Shopify products.");
-  return result;
+  return { ...result, source: "live" };
 }

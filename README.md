@@ -295,7 +295,7 @@ For a blind or low-vision shopper, someone with limited motor control, or anyone
 
 Press **Shop by voice** on any screen. The microphone stays off until the shopper opens the panel and explicitly presses start — that is a hard privacy boundary, not a preference.
 
-Your audio goes over WebRTC straight to an OpenAI Realtime session. The agent reads the current screen through the same guarded tools that power WebMCP, speaks the available options aloud, records exact choices, runs the same verified live search as the **Go** button, reads the results back, and can create cart proposals. Voice users are not sent down a weaker “accessible fallback” path — they get the same live catalog, verification rules, and human approval gate as everyone else.
+Your audio goes over WebRTC straight to an OpenAI Realtime session. The agent reads the current screen through the same guarded tools that power WebMCP, speaks the available options aloud, records exact choices, loads the same verified category snapshot as the **Go** button, reads the results back, and can create cart proposals. Voice users are not sent down a weaker “accessible fallback” path — they get the same verified product records and human approval gate as everyone else.
 
 High-stakes actions need **exact spoken phrases**,  a fuzzy "yeah okay sure" doesn't move money-adjacent state:
 
@@ -460,7 +460,7 @@ co-cart/
 Because a README that only lists strengths isn't worth reading:
 
 - **The delivery address is demo-grade.** Shopify's catalog filter takes a *country*, not a street. The field accepts free text and derives the country from it — which is exactly what every checkout does, but it isn't validating that your street exists.
-- **The warmed snapshots age.** Real data, captured on a specific day. Re-capture before a demo that matters.
+- **The warmed snapshots age.** Every normal browser and voice search uses its category's recent verified Shopify snapshot so the experience stays fast and reliable. Prices and availability are point-in-time data, so re-capture before a demo that matters. The separate headless MCP endpoint always performs a live search.
 - **WebMCP is still a proposal.** `navigator.modelContext` isn't in stable browsers yet, so the tool surface only lights up in a WebMCP-enabled host. That's a bet on where the web is going, and I'm comfortable making it.
 - **Headless MCP is intentionally search-only.** It returns verified results to server or CLI agents, but has no persistent user/cart identity. Browser-side WebMCP remains the right interface when a shopper is present to review proposals.
 - **The shortlist caps at six.** Deliberate — the whole point is reducing choice — but it means Co-Cart is a decision tool, not a search engine.

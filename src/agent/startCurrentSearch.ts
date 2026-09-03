@@ -19,7 +19,7 @@ export async function startCurrentLiveSearch() {
     const result = await runCoordinatedSearch(domain, answers, {
       onStatus: (label, detail, status) => useStore.getState().addSearchEvent(searchId, label, detail, status),
     });
-    if (!useStore.getState().completeLiveSearch(searchId, result.products, result.summary)) {
+    if (!useStore.getState().completeLiveSearch(searchId, result.products, result.summary, result.source)) {
       throw new Error("The search was superseded before results arrived.");
     }
     useStore.getState().log("agent", `Returned ${result.products.length} verified live Shopify result(s)`, "start-live-search", "success");

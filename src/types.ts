@@ -61,6 +61,7 @@ export interface Product {
 export interface LiveSearchResult {
   summary: string;
   products: Product[];
+  source?: "live" | "warmed-snapshot";
 }
 
 export interface DecisionBrief {

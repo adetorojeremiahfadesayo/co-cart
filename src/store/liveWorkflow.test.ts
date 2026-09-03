@@ -52,6 +52,13 @@ describe("live workflow guards", () => {
     expect(useStore.getState().liveProducts.map((product) => product.id)).toEqual(["live-1", "live-2"]);
   });
 
+  it("records when results come from a warmed verified snapshot", () => {
+    useStore.getState().startDomain("gadgets", false);
+    const searchId = useStore.getState().beginLiveSearch()!;
+    useStore.getState().completeLiveSearch(searchId, [liveProduct()], "snapshot", "warmed-snapshot");
+    expect(useStore.getState().searchSource).toBe("warmed-snapshot");
+  });
+
   it("discards completion from a stale search after the category changes", () => {
     useStore.getState().startDomain("gadgets", false);
     const searchId = useStore.getState().beginLiveSearch()!;
