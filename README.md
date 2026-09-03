@@ -6,7 +6,7 @@
 
 **An AI agent that shops for you**
 
-*You answer six plain questions. A real agent searches live Shopify stores. Every price on your screen came from a merchant, not a model. And nothing enters your cart until you say yes.*
+*You answer six plain questions — by tapping or by speaking. A real agent searches live Shopify stores. Every price on your screen came from a merchant, not a model. And nothing enters your cart until you say yes.*
 
 [**🛒 Live app**](https://co-cart-live.netlify.app) ·
 [Architecture](#how-it-actually-works) ·
@@ -48,10 +48,35 @@ The second thing: an agent that can shop should never be able to *buy*. Every ca
 
 ---
 
+## Why WebMCP is the point, not a checkbox
+
+Co-Cart is built for a near future where a shopper's agent is not merely reading a webpage — it is **using the webpage on the shopper's behalf**.
+
+A normal shopping site gives an AI a wall of pixels, ambiguous buttons, and product copy it has to guess how to interpret. Co-Cart gives a WebMCP-capable agent a small, explicit action layer through `navigator.modelContext`: read the current shopping state, answer the same decision cards a person sees, start a verified live search, inspect the resulting shortlist, and propose a cart change.
+
+That distinction matters:
+
+```text
+Typical website                         Co-Cart
+───────────────                         ───────
+Agent tries to infer the UI             Agent discovers typed, named tools
+Agent scrapes product copy              Server verifies facts with Shopify
+Agent guesses whether it can act        Tool schemas state exactly what is allowed
+Agent may change state invisibly        The UI reacts to every agent action
+Agent can overreach at checkout         Cart changes remain proposals for a human
+```
+
+The human interface and agent interface are deliberately connected to the **same Zustand store**. There is no hidden “agent mode” with extra powers. If the agent selects *quick dinner*, the same card changes on screen. If it highlights a product, the person sees it. If it proposes an addition, the person still has the final approve/reject decision.
+
+That is the WebMCP experiment here: not “AI added to a shopping page,” but a page that is legible and useful to both a person and their agent — without giving either side an unearned level of trust.
+
+---
+
 ## Table of contents
 
 - [What it feels like to use](#what-it-feels-like-to-use)
 - [What makes it different](#what-makes-it-different)
+- [Why WebMCP is the point, not a checkbox](#why-webmcp-is-the-point-not-a-checkbox)
 - [How it actually works](#how-it-actually-works)
 - [The 13 tools the page hands to an agent](#the-13-tools-the-page-hands-to-an-agent)
 - [Using Co-Cart from a WebMCP browser](#using-co-cart-from-a-webmcp-browser)
@@ -102,6 +127,8 @@ Checkout doesn't charge you. It opens the actual merchant's Shopify checkout, be
 **There is no demo fallback on the live path.** This is the decision I'd defend hardest. If the API key is missing, or OpenAI fails, or Shopify is unreachable — you get an explicit, recoverable error that says exactly what broke. You never get seeded data quietly dressed up as live results. A demo that fails visibly is worth more than one that fails beautifully.
 
 **Agents propose; humans dispose.** Confirmed cart lines and agent proposals are separate arrays in the store, and the only paths from one to the other run through a human click. Two tests exist purely to prove a rejected proposal leaves the confirmed cart byte-identical.
+
+**WebMCP is a real action layer, not an AI label.** A WebMCP-enabled browser discovers 13 typed page tools at load. An agent can move through the same six decisions, trigger the real Shopify search, compare verified products, and prepare a cart proposal — all through the shared state the person is looking at. It can help, but it cannot silently take over.
 
 **Multiple currencies never get silently added together.** Shopify's global catalog will happily return a $13.99 item and a ₦21,900 item in the same shortlist. Most carts would mash those into one meaningless number. Co-Cart keeps per-currency subtotals separate and displays them separately, because "$35.99 + ₦21,900 = 21,935.99" is a lie with a decimal point in it.
 
@@ -190,9 +217,9 @@ Source: [`src/webmcp/tools.ts`](src/webmcp/tools.ts)
 
 ## Using Co-Cart from a WebMCP browser
 
-Co-Cart registers its tools on `navigator.modelContext` at load. Nothing to click, nothing to enable.
+Co-Cart registers its tools on `navigator.modelContext` at load. Nothing to click, nothing to enable — the agent host discovers them as part of the page.
 
-Open [co-cart-live.netlify.app](https://co-cart-live.netlify.app) in a WebMCP-enabled browser or agent host and the tools are discoverable immediately. From an agent (or the console, host API depending):
+Open [co-cart-live.netlify.app](https://co-cart-live.netlify.app) in a WebMCP-enabled browser or agent host and the tools are discoverable immediately. The host can give an agent a request such as “find crowd-favourite wireless headphones under $50,” and the agent can operate the flow through explicit tools rather than unreliable visual guessing. From an agent (or the console, host API depending):
 
 ```js
 await navigator.modelContext.callTool("select-domain", { domain: "gadgets" });
@@ -204,7 +231,9 @@ await navigator.modelContext.callTool("get-live-results", {});
 await navigator.modelContext.callTool("add-to-cart", { productId: "…" }); // proposal only
 ```
 
-**The full-power sequence:** `get-decision-state` → `select-domain` → `set-decision-answer` ×6 → `start-live-search` → `get-live-results` → `highlight-products` → `add-to-cart`. Then stop, because the last step needs a human — which is the point.
+**The full-power sequence:** `get-decision-state` → `select-domain` → `set-decision-answer` ×6 → `start-live-search` → `get-live-results` → `highlight-products` → `add-to-cart`. At each step the tool returns structured state, and the page shows the same state to the person. Then stop: `add-to-cart` creates a proposal, not a purchase, because the last decision belongs to a human.
+
+This is why the 13 tools matter to the hackathon: they turn a shopping interface into an **agent-ready, observable, constrained action surface**. They are intentionally silent in the product UI, but they are the core interface for a browser agent.
 
 No WebMCP browser handy? The hands-free voice mode drives the exact same tool surface, so you can demo the agent path in any browser with a microphone.
 
@@ -212,9 +241,13 @@ No WebMCP browser handy? The hands-free voice mode drives the exact same tool su
 
 ## Shopping with your voice
 
-Press **Shop by voice** on any screen. The mic stays off until you open the panel and press start, that's a hard rule, not a preference.
+This is not voice search bolted onto a visual product. It is Co-Cart's **accessible way through the complete shopping flow** for people who cannot comfortably see, point at, or type into a conventional interface.
 
-Your audio goes over WebRTC straight to an OpenAI Realtime session. The agent reads the current screen through the same guarded tools, speaks your options aloud, records your exact choices, runs the same live search the **Go** button runs, reads results back, and can create cart proposals.
+For a blind or low-vision shopper, someone with limited motor control, or anyone who simply cannot use a keyboard in the moment, the agent can say what screen they are on, read out the available choices, accept a spoken answer, explain the live shortlist, and describe the next safe action. The person does not need to find a card, read a tiny price, or type a search query before the agent can help.
+
+Press **Shop by voice** on any screen. The microphone stays off until the shopper opens the panel and explicitly presses start — that is a hard privacy boundary, not a preference.
+
+Your audio goes over WebRTC straight to an OpenAI Realtime session. The agent reads the current screen through the same guarded tools that power WebMCP, speaks the available options aloud, records exact choices, runs the same verified live search as the **Go** button, reads the results back, and can create cart proposals. Voice users are not sent down a weaker “accessible fallback” path — they get the same live catalog, verification rules, and human approval gate as everyone else.
 
 High-stakes actions need **exact spoken phrases** — a fuzzy "yeah okay sure" doesn't move money-adjacent state:
 
@@ -224,7 +257,7 @@ High-stakes actions need **exact spoken phrases** — a fuzzy "yeah okay sure" d
 | Reject pending cart changes | `reject all changes` |
 | Confirm your shopping plan | `confirm shopping plan` |
 
-Confirming a plan still never submits payment. You can interrupt the agent, mute, ask it to repeat the screen, or end the session at any point.
+Confirming a plan still never submits payment. You can interrupt the agent, mute, ask it to repeat the screen, or end the session at any point. The goal is not to make the agent decide for a disabled shopper; it is to remove the visual and typing barriers that would otherwise stop that shopper from making their own decision.
 
 Source: [`src/voice/tools.ts`](src/voice/tools.ts) · [`src/voice/realtimeAgent.ts`](src/voice/realtimeAgent.ts)
 
