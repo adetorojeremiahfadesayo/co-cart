@@ -138,12 +138,14 @@ export interface StoreState {
   checkedOut: ConfirmedPlan | null;
   cartOpen: boolean;
   startDomain: (domain: DecisionDomain, usePreset?: boolean) => void;
-  setDecisionAnswer: (questionId: string, values: string[]) => void;
+  setDecisionAnswer: (questionId: string, values: string[], source?: "user" | "agent") => void;
+  agentAnswerFlash: { questionId: string; at: number } | null;
   beginLiveSearch: () => string | null;
   addSearchEvent: (searchId: string, label: string, detail?: string, status?: SearchEvent["status"]) => void;
   completeLiveSearch: (searchId: string, products: Product[], summary: string) => boolean;
   failLiveSearch: (searchId: string, message: string) => boolean;
   returnToDecisions: () => void;
+  continueShopping: () => void;
   resetWorkspace: () => void;
   updateBrief: (patch: Partial<DecisionBrief>) => void;
   log: (source: ActivityEntry["source"], summary: string, tool?: string, outcome?: ActivityEntry["outcome"]) => void;
@@ -188,14 +190,18 @@ export const useStore = create<StoreState>((set, get) => ({
   startDomain: (domain, usePreset = false) => {
     const brief = usePreset ? structuredClone(DOMAIN_CONFIG[domain].preset) : blankBrief();
     const initialCategory = usePreset ? (DOMAIN_CONFIG[domain].categories[1] ?? "all") : "all";
-    set({ domain, stage: "decisions", answers: {}, liveProducts: [], searchEvents: [], searchSummary: "", searchError: null, activeSearchId: null, brief, cart: [], proposals: [], filters: makeFilters(initialCategory), highlight: null, checkedOut: null, cartOpen: false });
+    set({ domain, stage: "decisions", answers: {}, liveProducts: [], searchEvents: [], searchSummary: "", searchError: null, activeSearchId: null, brief, cart: [], proposals: [], filters: makeFilters(initialCategory), highlight: null, checkedOut: null, cartOpen: false, agentAnswerFlash: null });
     get().log("user", `Selected ${DOMAIN_CONFIG[domain].label}`);
   },
-  setDecisionAnswer: (questionId, values) => set((state) => ({ answers: { ...state.answers, [questionId]: values } })),
+  setDecisionAnswer: (questionId, values, source = "user") => set((state) => ({
+    answers: { ...state.answers, [questionId]: values },
+    agentAnswerFlash: source === "agent" ? { questionId, at: Date.now() } : state.agentAnswerFlash,
+  })),
+  agentAnswerFlash: null,
   beginLiveSearch: () => {
     if (get().stage === "searching") return null;
     const activeSearchId = `search-${Date.now()}-${++searchSeq}`;
-    set({ activeSearchId, stage: "searching", liveProducts: [], searchEvents: [{ id: Date.now(), label: "Starting OpenAI shopping agent", detail: "Preparing your decision brief", status: "active" }], searchSummary: "", searchError: null, highlight: null });
+    set({ activeSearchId, stage: "searching", searchEvents: [{ id: Date.now(), label: "Starting OpenAI shopping agent", detail: "Preparing your decision brief", status: "active" }], searchSummary: "", searchError: null, highlight: null });
     return activeSearchId;
   },
   addSearchEvent: (searchId, label, detail, status = "active") => set((state) => state.activeSearchId !== searchId ? state : ({
@@ -203,16 +209,24 @@ export const useStore = create<StoreState>((set, get) => ({
   })),
   completeLiveSearch: (searchId, liveProducts, searchSummary) => {
     if (get().activeSearchId !== searchId || get().stage !== "searching") return false;
-    set((state) => ({ activeSearchId: null, stage: "results", liveProducts, searchSummary, searchError: null, filters: makeFilters(), searchEvents: state.searchEvents.map((event) => event.status === "active" ? { ...event, status: "done" as const } : event) }));
+    set((state) => {
+      const knownSources = new Set(state.liveProducts.map((product) => product.sourceId ?? product.id));
+      const newProducts = liveProducts.filter((product) => !knownSources.has(product.sourceId ?? product.id));
+      return { activeSearchId: null, stage: "results", liveProducts: [...state.liveProducts, ...newProducts], searchSummary, searchError: null, filters: makeFilters(), searchEvents: state.searchEvents.map((event) => event.status === "active" ? { ...event, status: "done" as const } : event) };
+    });
     return true;
   },
   failLiveSearch: (searchId, searchError) => {
     if (get().activeSearchId !== searchId || get().stage !== "searching") return false;
-    set((state) => ({ activeSearchId: null, stage: "error", liveProducts: [], searchError, searchEvents: [...state.searchEvents.map((event) => event.status === "active" ? { ...event, status: "done" as const } : event), { id: Date.now(), label: "Live search stopped", detail: searchError, status: "error" }] }));
+    set((state) => ({ activeSearchId: null, stage: "error", searchError, searchEvents: [...state.searchEvents.map((event) => event.status === "active" ? { ...event, status: "done" as const } : event), { id: Date.now(), label: "Live search stopped", detail: searchError, status: "error" }] }));
     return true;
   },
   returnToDecisions: () => set({ activeSearchId: null, stage: "decisions", liveProducts: [], searchEvents: [], searchSummary: "", searchError: null, cart: [], proposals: [], highlight: null }),
-  resetWorkspace: () => set({ domain: null, stage: "decisions", answers: {}, liveProducts: [], searchEvents: [], searchSummary: "", searchError: null, activeSearchId: null, brief: null, cart: [], proposals: [], filters: makeFilters(), highlight: null, checkedOut: null, cartOpen: false }),
+  continueShopping: () => {
+    set({ activeSearchId: null, stage: "decisions", searchEvents: [], searchSummary: "", searchError: null, highlight: null });
+    get().log("user", "Continued shopping with earlier options and cart preserved");
+  },
+  resetWorkspace: () => set({ domain: null, stage: "decisions", answers: {}, liveProducts: [], searchEvents: [], searchSummary: "", searchError: null, activeSearchId: null, brief: null, cart: [], proposals: [], filters: makeFilters(), highlight: null, checkedOut: null, cartOpen: false, agentAnswerFlash: null }),
   updateBrief: (patch) => set((state) => ({ brief: state.brief ? { ...state.brief, ...patch } : state.brief })),
   log: (source, summary, tool, outcome) => set((state) => ({ activity: [{ id: ++activitySeq, time: stamp(), source, summary, tool, outcome }, ...state.activity].slice(0, 200) })),
   setFilter: (patch) => set((state) => ({ filters: { ...state.filters, ...patch } })),
@@ -320,7 +334,7 @@ export const useStore = create<StoreState>((set, get) => ({
     if (source === "user") state.log("system", `Shopping plan confirmed—${listedTotal}, ${totals.itemCount} item(s)`);
     return { ok: true, message: `Shopping plan confirmed. No purchase was made. Listed subtotal: ${listedTotal}.` };
   },
-  newShop: () => set({ domain: null, stage: "decisions", answers: {}, liveProducts: [], searchEvents: [], searchSummary: "", searchError: null, activeSearchId: null, brief: null, cart: [], proposals: [], filters: makeFilters(), activity: [], highlight: null, checkedOut: null, cartOpen: false }),
+  newShop: () => set({ domain: null, stage: "decisions", answers: {}, liveProducts: [], searchEvents: [], searchSummary: "", searchError: null, activeSearchId: null, brief: null, cart: [], proposals: [], filters: makeFilters(), activity: [], highlight: null, checkedOut: null, cartOpen: false, agentAnswerFlash: null }),
   setCartOpen: (cartOpen) => set({ cartOpen }),
   cartTotals: () => {
     const state = get();

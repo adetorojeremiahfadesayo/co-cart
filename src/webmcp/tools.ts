@@ -14,10 +14,6 @@ function getModelContext(): any | null {
   return nav?.modelContext ?? doc?.modelContext ?? null;
 }
 
-export function webmcpSupported() {
-  return getModelContext() != null;
-}
-
 const productSummary = (id: string) => {
   const product = liveProductById(id);
   if (!product) return null;
@@ -71,13 +67,7 @@ let registered = false;
 let registration: Promise<boolean> | null = null;
 const registeredToolNames = new Set<string>();
 
-export async function registerWebMcpTools(): Promise<boolean> {
-  if (registered) return true;
-  if (registration) return registration;
-  const mc = getModelContext();
-  if (!mc) return false;
-
-  const tools = [
+const tools = [
     {
       name: "get-decision-state",
       description: "Read the visible Co-Cart workflow: category, stage, decision questions and answers, live Shopify results, confirmed cart, and pending human approvals.",
@@ -118,7 +108,7 @@ export async function registerWebMcpTools(): Promise<boolean> {
         const values = args.values.filter((value): value is string => typeof value === "string");
         const valid = values.length > 0 && values.length <= (question.multiple ? 2 : 1) && values.every((value) => question.options.some((option) => option.value === value));
         if (!valid) return err(`Use ${question.multiple ? "one or two" : "one"} valid option value(s) for ${question.id}.`);
-        useStore.getState().setDecisionAnswer(question.id, values);
+        useStore.getState().setDecisionAnswer(question.id, values, "agent");
         return text({ message: "Decision updated in the visible UI.", questionId: question.id, values });
       }),
     },
@@ -231,6 +221,12 @@ export async function registerWebMcpTools(): Promise<boolean> {
       }),
     },
   ];
+
+export async function registerWebMcpTools(): Promise<boolean> {
+  if (registered) return true;
+  if (registration) return registration;
+  const mc = getModelContext();
+  if (!mc) return false;
 
   registration = (async () => {
     try {

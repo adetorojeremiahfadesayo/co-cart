@@ -1,19 +1,27 @@
 import { DOMAIN_CONFIG } from "../data/catalog";
 import { useStore } from "../store/useStore";
 import { cancelActiveSearch } from "../agent/searchCoordinator";
+import { startCurrentLiveSearch } from "../agent/startCurrentSearch";
 
 export default function AgentSearch() {
   const domain = useStore((state) => state.domain);
   const stage = useStore((state) => state.stage);
   const events = useStore((state) => state.searchEvents);
   const error = useStore((state) => state.searchError);
-  const returnToDecisions = useStore((state) => state.returnToDecisions);
+  const continueShopping = useStore((state) => state.continueShopping);
 
   if (!domain) return null;
   const failed = stage === "error";
   const backToDecisions = () => {
     cancelActiveSearch();
-    returnToDecisions();
+    continueShopping();
+  };
+  const retry = async () => {
+    try {
+      await startCurrentLiveSearch();
+    } catch {
+      // The refreshed search state presents the actionable error.
+    }
   };
 
   return (
@@ -40,7 +48,10 @@ export default function AgentSearch() {
       {failed && (
         <div className="agent-error" role="alert">
           <p>{error}</p>
-          <button type="button" className="quiet-button" onClick={backToDecisions}>Back to decisions</button>
+          <div className="agent-error__actions">
+            <button type="button" className="quiet-button" onClick={retry}>Retry search</button>
+            <button type="button" className="quiet-button" onClick={backToDecisions}>Adjust decisions</button>
+          </div>
         </div>
       )}
     </main>

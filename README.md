@@ -14,6 +14,23 @@ If the OpenAI key is missing, the agent fails, or Shopify MCP is not called, Co-
 
 Credentialed local searches have passed for meals, clothing, and gadgets. Exact inputs, timing, progress events, and point-in-time Shopify results are recorded in [`CO-CART_LIVE_SEARCH_EVIDENCE.md`](./CO-CART_LIVE_SEARCH_EVIDENCE.md).
 
+## For judges: a 90-second tour
+
+**What it is.** Co-Cart turns an overwhelming catalog into a short, explained shortlist. You answer six plain-language decision cards (including how you want the agent to judge — crowd favourite, best value, hidden gem, or industry standard — and whether you prefer big-name or independent stores). A real OpenAI agent then searches the **live** Shopify Global Catalog, and every product fact you see (title, price, merchant, image, link) is reconstructed server-side from Shopify's own responses — never written by the model.
+
+**Why WebMCP.** The page registers 13 guarded tools (`src/webmcp/tools.ts`) that mirror the visible UI one-to-one: an agent can read the decision state, answer cards, start the live search, read verified results, and propose cart changes. Everything an agent does is visible in the UI as it happens — cards flash and scroll into view when an agent answers them, and cart changes stay proposals until a human approves.
+
+**Try it in 90 seconds:**
+
+1. `npm install`, put an `OPENAI_API_KEY` in `.env` (see `.env.example`), `npm run dev`.
+2. Pick a category, answer the cards, press **Go**. Watch the live progress timeline (including how many Shopify listings were found).
+3. On the results screen, note the "Agent's pick" badges and honest tradeoffs. Press **Choose more +** to add another product type — results merge live, no duplicates.
+4. Open the cart: agent additions arrive as *proposals* with approve/reject — the confirmed cart never changes without you.
+5. In a WebMCP-enabled host, call `get-decision-state` and `set-decision-answer` and watch the UI react — the tools are registered silently and nothing about them is shown in the UI.
+6. Optional: press **Shop by voice** for the hands-free mode — an OpenAI Realtime agent operates the same tool surface by speech, with the microphone off until you opt in.
+
+**Integrity boundaries worth noticing:** no demo fallback on the live path (a failure shows an explicit, recoverable error), "Top-rated choice" is used only when the listing itself contains rating evidence, prices are labelled as listed prices excluding shipping/tax, and confirming a plan never charges anything — purchase happens at the merchant.
+
 ## Architecture
 
 ```text

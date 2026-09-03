@@ -1,12 +1,27 @@
+import { useEffect, useState } from "react";
 import { startCurrentLiveSearch } from "../agent/startCurrentSearch";
 import { DECISION_QUESTIONS, requiredQuestionIds } from "../decision/questions";
 import { DOMAIN_CONFIG } from "../data/catalog";
 import { useStore } from "../store/useStore";
+import { OPEN_HANDS_FREE_EVENT } from "../voice/events";
 
 export default function DecisionDeck() {
   const domain = useStore((state) => state.domain);
   const answers = useStore((state) => state.answers);
+  const previousOptions = useStore((state) => state.liveProducts.length);
   const setDecisionAnswer = useStore((state) => state.setDecisionAnswer);
+  const agentAnswerFlash = useStore((state) => state.agentAnswerFlash);
+  const [flashClearedAt, setFlashClearedAt] = useState(0);
+  const flashId = agentAnswerFlash && agentAnswerFlash.at > flashClearedAt ? agentAnswerFlash.questionId : null;
+
+  useEffect(() => {
+    if (!agentAnswerFlash) return;
+    const card = document.getElementById(`decision-${agentAnswerFlash.questionId}`);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    card?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+    const timer = window.setTimeout(() => setFlashClearedAt(agentAnswerFlash.at), 1600);
+    return () => window.clearTimeout(timer);
+  }, [agentAnswerFlash]);
 
   const questions = domain ? DECISION_QUESTIONS[domain] : [];
   const required = domain ? requiredQuestionIds(domain) : [];
@@ -36,7 +51,7 @@ export default function DecisionDeck() {
       <header className="decision-space__intro">
         <p className="quiet-kicker">{DOMAIN_CONFIG[domain].label}</p>
         <h1>Let’s narrow the noise.</h1>
-        <p>Choose what matters. Nothing is searched until you press Go.</p>
+        <p>{previousOptions ? "Choose the next thing you need. Your earlier options and cart will stay with you." : "Tell us what feels right for you. Nothing is searched until you press Go."}</p>
         <span>{completed} of {required.length} decisions made</span>
       </header>
 
@@ -48,7 +63,7 @@ export default function DecisionDeck() {
             <section
               key={question.id}
               id={`decision-${question.id}`}
-              className={`decision-step ${answered ? "decision-step--answered" : ""}`}
+              className={`decision-step ${answered ? "decision-step--answered" : ""} ${flashId === question.id ? "decision-step--agent-set" : ""}`}
               aria-labelledby={`decision-title-${question.id}`}
             >
               <div className="decision-step__number">{String(index + 1).padStart(2, "0")}</div>
@@ -81,10 +96,21 @@ export default function DecisionDeck() {
 
       <div className="go-dock">
         <div>
-          <strong>{ready ? "Your brief is ready." : `${required.length - completed} decision${required.length - completed === 1 ? "" : "s"} left.`}</strong>
+          <strong>{ready ? (previousOptions ? "Ready to find more." : "Your brief is ready.") : `${required.length - completed} decision${required.length - completed === 1 ? "" : "s"} left.`}</strong>
           <span>Go starts a real OpenAI agent and live Shopify catalog search.</span>
         </div>
-        <button type="button" className="go-button" disabled={!ready} onClick={go}>Go <span aria-hidden>→</span></button>
+        <div className="go-dock__actions">
+          <button
+            type="button"
+            className="go-dock__voice"
+            onClick={() => window.dispatchEvent(new Event(OPEN_HANDS_FREE_EVENT))}
+            aria-label="Open hands-free voice shopping mode"
+            title="Hands-free mode"
+          >
+            <span aria-hidden>◉</span>
+          </button>
+          <button type="button" className="go-button" disabled={!ready} onClick={go}>{previousOptions ? "Find more" : "Go"} <span aria-hidden>→</span></button>
+        </div>
       </div>
     </main>
   );

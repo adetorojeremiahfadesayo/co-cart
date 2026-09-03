@@ -15,6 +15,31 @@ export interface DecisionQuestion {
   options: DecisionOption[];
 }
 
+const sharedDecisionStyle: DecisionQuestion = {
+  id: "decision_style",
+  eyebrow: "Choosing",
+  prompt: "How should the agent choose for you?",
+  detail: "The agent weighs this when picking finalists from live listings.",
+  options: [
+    { value: "crowd favourite", label: "Crowd favourite", hint: "Widely chosen, well-known picks" },
+    { value: "best value", label: "Best value for money" },
+    { value: "hidden gem", label: "Cheap but a hidden gem", hint: "Lesser-known, strong for the price" },
+    { value: "industry standard", label: "The industry standard", hint: "The safe, default choice" },
+  ],
+};
+
+const sharedStorePreference: DecisionQuestion = {
+  id: "store_preference",
+  eyebrow: "Stores",
+  prompt: "Any preference on where it comes from?",
+  detail: "The agent weighs merchant signals from live Shopify listings.",
+  options: [
+    { value: "no preference", label: "No preference" },
+    { value: "big-name stores", label: "Big-name stores" },
+    { value: "smaller independent stores", label: "Smaller independent stores" },
+  ],
+};
+
 const sharedDelivery: DecisionQuestion = {
   id: "ships_to",
   eyebrow: "Delivery",
@@ -33,8 +58,8 @@ export const DECISION_QUESTIONS: Record<DecisionDomain, DecisionQuestion[]> = {
     {
       id: "meal_type",
       eyebrow: "The meal",
-      prompt: "What are we looking for?",
-      detail: "Choose the closest intent. You can revise it after selecting.",
+      prompt: "What would make eating easier for you right now?",
+      detail: "Choose the closest need and I’ll shape the search around it.",
       options: [
         { value: "quick dinner", label: "Quick dinner", hint: "Minimal preparation" },
         { value: "healthy snacks", label: "Healthy snacks" },
@@ -42,11 +67,13 @@ export const DECISION_QUESTIONS: Record<DecisionDomain, DecisionQuestion[]> = {
         { value: "meal kit", label: "Meal kit" },
       ],
     },
+    sharedDecisionStyle,
+    sharedStorePreference,
     {
       id: "food_priority",
       eyebrow: "Priorities",
-      prompt: "What matters most?",
-      detail: "Pick up to two signals for the agent to weigh.",
+      prompt: "What would make this feel like the right choice for you?",
+      detail: "Pick up to two priorities and I’ll explain the tradeoffs around them.",
       multiple: true,
       options: [
         { value: "high protein", label: "High protein" },
@@ -73,8 +100,8 @@ export const DECISION_QUESTIONS: Record<DecisionDomain, DecisionQuestion[]> = {
     {
       id: "gadget_type",
       eyebrow: "The device",
-      prompt: "What are you shopping for?",
-      detail: "A focused category gives the live agent a better starting point.",
+      prompt: "What are you hoping this device will help you do?",
+      detail: "Choose the closest product and I’ll focus the live search for you.",
       options: [
         { value: "wireless headphones", label: "Headphones" },
         { value: "portable speaker", label: "Speaker" },
@@ -82,11 +109,13 @@ export const DECISION_QUESTIONS: Record<DecisionDomain, DecisionQuestion[]> = {
         { value: "phone accessory", label: "Phone accessory" },
       ],
     },
+    sharedDecisionStyle,
+    sharedStorePreference,
     {
       id: "gadget_priority",
       eyebrow: "Priorities",
-      prompt: "What should win the comparison?",
-      detail: "Pick up to two. The agent will explain any tradeoff.",
+      prompt: "Which qualities would make you happiest with the choice?",
+      detail: "Pick up to two and I’ll make the tradeoffs easy to compare.",
       multiple: true,
       options: [
         { value: "long battery life", label: "Battery life" },
@@ -113,8 +142,8 @@ export const DECISION_QUESTIONS: Record<DecisionDomain, DecisionQuestion[]> = {
     {
       id: "clothing_type",
       eyebrow: "The piece",
-      prompt: "What are we finding?",
-      detail: "Choose a useful starting point for the live catalog search.",
+      prompt: "What would you like to feel confident wearing?",
+      detail: "Choose a starting point and I’ll look for options that fit the occasion.",
       options: [
         { value: "complete outfit", label: "Complete outfit" },
         { value: "dress", label: "Dress" },
@@ -122,11 +151,13 @@ export const DECISION_QUESTIONS: Record<DecisionDomain, DecisionQuestion[]> = {
         { value: "shoes", label: "Shoes" },
       ],
     },
+    sharedDecisionStyle,
+    sharedStorePreference,
     {
       id: "style_priority",
       eyebrow: "Style",
-      prompt: "What should the result feel like?",
-      detail: "Pick up to two style signals.",
+      prompt: "How would you like the final choice to feel on you?",
+      detail: "Pick up to two style signals so the shortlist feels more like you.",
       multiple: true,
       options: [
         { value: "minimal", label: "Minimal" },

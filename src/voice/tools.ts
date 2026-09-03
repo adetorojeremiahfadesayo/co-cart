@@ -93,7 +93,7 @@ export async function executeVoiceTool(name: string, args: VoiceToolArguments) {
       const max = question.multiple ? 2 : 1;
       if (values.length < 1 || values.length > max || new Set(values).size !== values.length) throw new Error(`Choose between 1 and ${max} unique option(s).`);
       if (!values.every((value) => question.options.some((option) => option.value === value))) throw new Error("Use only values offered for this question.");
-      state.setDecisionAnswer(questionId, values);
+      state.setDecisionAnswer(questionId, values, "agent");
       return { ok: true, message: `Recorded ${values.join(" and ")}.`, state: getAccessibleSnapshot() };
     }
     case "start_live_search": {

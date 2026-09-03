@@ -43,6 +43,11 @@ export default function ProductCard({
         )}
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-4">
+        {p.recommendationClass && (
+          <span className="recommendation-class" title="The agent's assessment from live listing data, not a verified rating">
+            Agent’s pick · {p.recommendationClass}
+          </span>
+        )}
         <h3 className="font-display text-base font-extrabold leading-snug">{p.name}</h3>
         <p className="product-merchant">{p.merchant}</p>
         <p className="line-clamp-3 text-xs font-semibold text-ink-soft">{p.description}</p>

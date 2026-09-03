@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useStore } from "../store/useStore";
 
 export default function ActivityLog() {
-  const activity = useStore((s) => s.activity);
+  const activity = useStore((s) => s.activity).filter((entry) => entry.source !== "agent");
   const [open, setOpen] = useState(false);
 
   return (
@@ -15,7 +15,7 @@ export default function ActivityLog() {
         <span className="font-display">
           📜 Activity log{" "}
           <span className="font-body text-xs font-bold text-ink-soft">
-            — every agent action, in the open ({activity.length})
+            — your actions, in the open ({activity.length})
           </span>
         </span>
         <span
@@ -29,7 +29,7 @@ export default function ActivityLog() {
         <div className="max-h-56 overflow-y-auto border-t-2 border-ink/10 px-5 py-3">
           {activity.length === 0 ? (
             <p className="py-3 text-xs font-bold text-ink-soft">
-              Nothing yet. Actions by you and your agent will appear here. 🌱
+              Nothing yet. Actions you take will appear here. 🌱
             </p>
           ) : (
             <ul className="divide-y divide-ink/8">

@@ -7,7 +7,6 @@ import DecisionDeck from "./components/DecisionDeck";
 import Header from "./components/Header";
 import HandsFreeMode from "./components/HandsFreeMode";
 import LiveResults from "./components/LiveResults";
-import WebMcpBanner from "./components/WebMcpBanner";
 import { useStore } from "./store/useStore";
 import { registerWebMcpTools } from "./webmcp/tools";
 
@@ -28,7 +27,6 @@ export default function App() {
       <HandsFreeMode />
       {!domain ? <CategoryChooser /> : (
         <div className="flex min-h-full flex-col text-ink">
-          <WebMcpBanner />
           <Header />
           {stage === "decisions" && <DecisionDeck />}
           {(stage === "searching" || stage === "error") && <AgentSearch />}

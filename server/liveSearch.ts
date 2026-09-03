@@ -1,5 +1,6 @@
 import { validateDecisionAnswers } from "../src/decision/questions.ts";
 import { executeShopifyAgentTool, OPENAI_SHOPIFY_FUNCTION_TOOLS, UCP_AGENT_PROFILE } from "./shopifyMcp.ts";
+import { fetchWithTransientRetry } from "./fetchWithRetry.ts";
 
 type DecisionDomain = "meals" | "gadgets" | "clothing";
 type Answers = Record<string, string[]>;
@@ -8,21 +9,23 @@ type JsonObject = Record<string, unknown>;
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const MAX_REQUEST_BYTES = 16_384;
-const SEARCH_TIMEOUT_MS = 45_000;
+const SEARCH_TIMEOUT_MS = 90_000;
 const RATE_WINDOW_MS = 10 * 60_000;
 const DEFAULT_RATE_LIMIT = 5;
 const DEFAULT_MAX_CONCURRENT = 8;
+const RECOMMENDATION_CLASSES = ["Top-rated choice", "Best value", "Budget hidden gem", "Trusted standard", "Best overall match"] as const;
 
 const productSchema = {
   type: "object",
   additionalProperties: false,
   properties: {
     sourceId: { type: "string" },
+    recommendationClass: { type: "string", enum: RECOMMENDATION_CLASSES },
     recommendation: { type: "string" },
     tradeoffs: { type: "array", items: { type: "string" } },
     tags: { type: "array", items: { type: "string" } },
   },
-  required: ["sourceId", "recommendation", "tradeoffs", "tags"],
+  required: ["sourceId", "recommendationClass", "recommendation", "tradeoffs", "tags"],
 } as const;
 
 const outputSchema = {
@@ -225,6 +228,9 @@ function parseOutput(text: string, domain: DecisionDomain, provenance: Map<strin
       imageUrl: source.imageUrl,
       productUrl: source.productUrl,
       checkoutUrl: source.checkoutUrl,
+      recommendationClass: RECOMMENDATION_CLASSES.includes(item?.recommendationClass as typeof RECOMMENDATION_CLASSES[number])
+        ? item?.recommendationClass as typeof RECOMMENDATION_CLASSES[number]
+        : "Best overall match",
       recommendation: typeof item?.recommendation === "string" ? item.recommendation.slice(0, 500) : "Matched to your decision brief",
       tradeoffs: Array.isArray(item?.tradeoffs) ? item.tradeoffs.filter((value): value is string => typeof value === "string").slice(0, 4) : [],
     };
@@ -302,55 +308,78 @@ export async function handleLiveSearch(request: Request): Promise<Response> {
       try {
         updateStatus("Connecting to OpenAI", `Running ${model} with Shopify Global Catalog`);
         while (true) {
-          const openaiResponse = await fetch(OPENAI_RESPONSES_URL, {
-            method: "POST",
-            signal: abortController.signal,
-            headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model,
-              store: false,
-              include: ["reasoning.encrypted_content"],
-              parallel_tool_calls: false,
-              max_output_tokens: 8000,
-              safety_identifier: identity.safetyIdentifier,
-              instructions: [
-                "You are Co-Cart's live shopping agent. All product discovery must use the supplied shopify_* functions, which execute Shopify Global Catalog MCP on the server. Do not use memory or invent products.",
-                `The server injects the required UCP agent profile ${UCP_AGENT_PROFILE} into every Shopify MCP call.`,
-                "The required first function is shopify_search_catalog. You may use shopify_get_product or shopify_lookup_catalog to verify finalists.",
-                "Only select currently available variants present in successful Shopify function outputs.",
-                "For every finalist, return sourceId as the exact gid://shopify/ProductVariant/... ID from a Shopify function output.",
-                "Do not repeat merchant, price, URL, image, or title facts in the structured selection; the server reconstructs those from Shopify output.",
-                "Return between one and six finalists. Make the shortlist concise and explain why each item matches plus honest tradeoffs.",
-              ].join("\n"),
-              input: inputItems,
-              tools: OPENAI_SHOPIFY_FUNCTION_TOOLS,
-              tool_choice: firstRound ? { type: "function", name: "shopify_search_catalog" } : "auto",
-              text: { format: { type: "json_schema", name: "live_shopify_shortlist", strict: true, schema: outputSchema } },
-            }),
-          });
+          let response: JsonObject | null = null;
+          let attemptFailure = "";
+          for (let attempt = 0; attempt < 2 && !response; attempt += 1) {
+            const openaiResponse = await fetchWithTransientRetry(OPENAI_RESPONSES_URL, {
+              method: "POST",
+              signal: abortController.signal,
+              headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                model,
+                store: false,
+                include: ["reasoning.encrypted_content"],
+                parallel_tool_calls: false,
+                max_output_tokens: attempt === 0 ? 8000 : 12_000,
+                safety_identifier: identity.safetyIdentifier,
+                instructions: [
+                  "You are Co-Cart's live shopping agent. All product discovery must use the supplied shopify_* functions, which execute Shopify Global Catalog MCP on the server. Do not use memory or invent products.",
+                  `The server injects the required UCP agent profile ${UCP_AGENT_PROFILE} into every Shopify MCP call.`,
+                  "The required first function is shopify_search_catalog. You may use shopify_get_product or shopify_lookup_catalog to verify finalists.",
+                  "Only select currently available variants present in successful Shopify function outputs.",
+                  "For every finalist, return sourceId as the exact gid://shopify/ProductVariant/... ID from a Shopify function output.",
+                  "Do not repeat merchant, price, URL, image, or title facts in the structured selection; the server reconstructs those from Shopify output.",
+                  "Weigh the buyer's decision_style (crowd favourite, best value, hidden gem, industry standard) and store_preference (no preference, big-name stores, smaller independent stores) when choosing finalists and assigning each classification.",
+                  `Classify every finalist as exactly one of: ${RECOMMENDATION_CLASSES.join(", ")}.`,
+                  "Use Top-rated choice only when the Shopify output contains explicit rating or review evidence. Never invent ratings, review counts, merchant quality, or brand reputation.",
+                  "Treat each classification as a concise editorial role supported by the live evidence and the buyer's requested recommendation style.",
+                  "Return between one and six finalists. Make the shortlist concise and explain why each item matches plus honest tradeoffs.",
+                ].join("\n"),
+                input: inputItems,
+                tools: OPENAI_SHOPIFY_FUNCTION_TOOLS,
+                tool_choice: firstRound ? { type: "function", name: "shopify_search_catalog" } : "auto",
+                text: { format: { type: "json_schema", name: "live_shopify_shortlist", strict: true, schema: outputSchema } },
+              }),
+            });
 
-          const rawOpenAi = await openaiResponse.text();
-          if (!openaiResponse.ok) {
-            let detail = "The OpenAI agent rejected the request.";
-            try {
-              const payload = asObject(JSON.parse(rawOpenAi));
-              const error = asObject(payload?.error);
-              if (typeof error?.message === "string") detail = error.message;
-            } catch {
-              // Keep the stable public error when OpenAI does not return JSON.
+            const rawOpenAi = await openaiResponse.text();
+            if (!openaiResponse.ok) {
+              let detail = "The OpenAI agent rejected the request.";
+              try {
+                const payload = asObject(JSON.parse(rawOpenAi));
+                const error = asObject(payload?.error);
+                if (typeof error?.message === "string") detail = error.message;
+              } catch {
+                // Keep the stable public error when OpenAI does not return JSON.
+              }
+              attemptFailure = `OpenAI live agent request failed (${openaiResponse.status}): ${detail}`;
+              if (attempt === 0 && (openaiResponse.status === 429 || openaiResponse.status >= 500)) {
+                updateStatus("Retrying the OpenAI agent", `First attempt failed (HTTP ${openaiResponse.status}); trying once more`);
+                continue;
+              }
+              throw new Error(attemptFailure);
             }
-            throw new Error(`OpenAI live agent request failed (${openaiResponse.status}): ${detail}`);
-          }
 
-          let response: JsonObject;
-          try {
-            response = JSON.parse(rawOpenAi) as JsonObject;
-          } catch {
-            throw new Error("OpenAI returned invalid JSON for the live shopping agent.");
+            let parsed: JsonObject;
+            try {
+              parsed = JSON.parse(rawOpenAi) as JsonObject;
+            } catch {
+              throw new Error("OpenAI returned invalid JSON for the live shopping agent.");
+            }
+            const responseError = asObject(parsed.error);
+            if (responseError) throw new Error(typeof responseError.message === "string" ? responseError.message : "The OpenAI live shopping agent failed.");
+            const openAiStatus = typeof parsed.status === "string" ? parsed.status : "unknown";
+            if (openAiStatus !== "completed") {
+              attemptFailure = `The OpenAI live shopping agent did not complete its turn (status: ${openAiStatus}).`;
+              if (attempt === 0 && openAiStatus === "incomplete") {
+                updateStatus("Retrying the OpenAI agent", "The first attempt stopped early; trying once more with more room");
+                continue;
+              }
+              throw new Error(attemptFailure);
+            }
+            response = parsed;
           }
-          const responseError = asObject(response.error);
-          if (responseError) throw new Error(typeof responseError.message === "string" ? responseError.message : "The OpenAI live shopping agent failed.");
-          if (response.status !== "completed") throw new Error("The OpenAI live shopping agent did not complete its turn.");
+          if (!response) throw new Error(attemptFailure || "The OpenAI live shopping agent failed.");
           const output = Array.isArray(response.output) ? response.output : [];
           const functionCalls = output.map(asObject).filter((item): item is JsonObject => item?.type === "function_call");
 
@@ -380,7 +409,14 @@ export async function handleLiveSearch(request: Request): Promise<Response> {
               output: result.output,
             });
             inputItems.push({ type: "function_call_output", call_id: call.call_id, output: result.output });
-            updateStatus("Shopify call completed", `Received current ${result.shopifyToolName} data`, "done");
+            const candidateCount = result.shopifyToolName === "search_catalog"
+              ? collectProductArrays(result.output).reduce((total, products) => total + products.length, 0)
+              : 0;
+            updateStatus(
+              "Shopify call completed",
+              candidateCount ? `Found ${candidateCount} live listing${candidateCount === 1 ? "" : "s"} matching the brief` : `Received current ${result.shopifyToolName} data`,
+              "done",
+            );
           }
           firstRound = false;
           updateStatus("OpenAI agent comparing options", "Reviewing verified Shopify records and deciding whether more evidence is needed");

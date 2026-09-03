@@ -1,3 +1,5 @@
+import { fetchWithTransientRetry } from "./fetchWithRetry.ts";
+
 type JsonObject = Record<string, unknown>;
 
 export const SHOPIFY_MCP_URL = "https://catalog.shopify.com/api/ucp/mcp";
@@ -99,7 +101,7 @@ function identifier(value: unknown) {
 }
 
 async function callShopify(name: ShopifyAgentToolResult["shopifyToolName"], argumentsWithProfile: JsonObject, signal: AbortSignal) {
-  const response = await fetch(SHOPIFY_MCP_URL, {
+  const response = await fetchWithTransientRetry(SHOPIFY_MCP_URL, {
     method: "POST",
     signal,
     headers: { "content-type": "application/json", accept: "application/json" },

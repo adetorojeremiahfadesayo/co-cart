@@ -5,6 +5,8 @@ const validPayload = {
   domain: "meals",
   answers: {
     meal_type: ["quick dinner"],
+    decision_style: ["best value"],
+    store_preference: ["no preference"],
     food_priority: ["high protein"],
     budget: ["50"],
     ships_to: ["NG"],
@@ -32,7 +34,7 @@ const shopifyResult = {
 
 const selection = JSON.stringify({
   summary: "One verified option matched the brief.",
-  products: [{ sourceId: "gid://shopify/ProductVariant/123", recommendation: "Matches the requested meal intent.", tradeoffs: ["Shipping is separate."], tags: ["quick"] }],
+  products: [{ sourceId: "gid://shopify/ProductVariant/123", recommendationClass: "Best value", recommendation: "Matches the requested meal intent.", tradeoffs: ["Shipping is separate."], tags: ["quick"] }],
 });
 
 function request(payload: unknown = validPayload, headers: Record<string, string> = {}) {
@@ -113,6 +115,7 @@ describe("handleLiveSearch", () => {
     expect(body).toContain("Verified Shopify Meal");
     expect(body).toContain('"price":25.99');
     expect(body).toContain("Verified Merchant");
+    expect(body).toContain('"recommendationClass":"Best value"');
     const firstOpenAiBody = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
     expect(firstOpenAiBody.tool_choice).toEqual({ type: "function", name: "shopify_search_catalog" });
     expect(firstOpenAiBody.tools.every((tool: { type: string }) => tool.type === "function")).toBe(true);
@@ -128,6 +131,25 @@ describe("handleLiveSearch", () => {
     const secondOpenAiBody = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
     expect(secondOpenAiBody.tool_choice).toBe("auto");
     expect(secondOpenAiBody.input.some((item: { type?: string }) => item.type === "function_call_output")).toBe(true);
+  });
+
+  it("retries one transient upstream fetch failure", async () => {
+    let calls = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url === "https://api.openai.com/v1/responses") {
+        calls += 1;
+        if (calls === 1) throw new TypeError("fetch failed");
+        return new Response(JSON.stringify(calls === 2 ? functionCall() : finalResponse()), { status: 200 });
+      }
+      if (url === "https://catalog.shopify.com/api/ucp/mcp") {
+        return new Response(JSON.stringify({ jsonrpc: "2.0", id: 1, result: shopifyResult }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    });
+    const body = await (await handleLiveSearch(request())).text();
+    expect(body).toContain('"type":"result"');
+    expect(calls).toBe(3);
   });
 
   it("stops when Shopify MCP rejects the live call", async () => {

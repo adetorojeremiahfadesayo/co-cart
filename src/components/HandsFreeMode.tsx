@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CoCartRealtimeAgent } from "../voice/realtimeAgent";
 import { executeVoiceTool } from "../voice/tools";
+import { OPEN_HANDS_FREE_EVENT } from "../voice/events";
 
 type Status = "idle" | "connecting" | "listening" | "speaking" | "stopped" | "error";
 type TranscriptEntry = { id: number; role: "shopper" | "agent"; text: string };
@@ -27,6 +28,12 @@ export default function HandsFreeMode() {
   const transcriptId = useRef(0);
 
   useEffect(() => () => agentRef.current?.disconnect(), []);
+
+  useEffect(() => {
+    const openPanel = () => setOpen(true);
+    window.addEventListener(OPEN_HANDS_FREE_EVENT, openPanel);
+    return () => window.removeEventListener(OPEN_HANDS_FREE_EVENT, openPanel);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -110,8 +117,7 @@ export default function HandsFreeMode() {
     <>
       <button id="hands-free-launch" type="button" className="hands-free-launch" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-label="Open hands-free voice shopping mode">
         <span className="hands-free-launch__icon" aria-hidden>◉</span>
-        <span className="hands-free-launch__full-label">Hands-free mode</span>
-        <span className="hands-free-launch__compact-label" aria-hidden>Hands-free</span>
+        <span className="hands-free-launch__tooltip" aria-hidden>Hands-free mode</span>
       </button>
 
       {open && (

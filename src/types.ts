@@ -35,6 +35,7 @@ export interface Product {
   imageUrl?: string;
   productUrl?: string;
   checkoutUrl?: string;
+  recommendationClass?: "Top-rated choice" | "Best value" | "Budget hidden gem" | "Trusted standard" | "Best overall match";
   recommendation?: string;
   tradeoffs?: string[];
   deliveryDays?: number;

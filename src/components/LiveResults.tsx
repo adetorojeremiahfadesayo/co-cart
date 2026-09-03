@@ -7,7 +7,7 @@ export default function LiveResults() {
   const domain = useStore((state) => state.domain);
   const products = useStore((state) => state.liveProducts);
   const summary = useStore((state) => state.searchSummary);
-  const returnToDecisions = useStore((state) => state.returnToDecisions);
+  const continueShopping = useStore((state) => state.continueShopping);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -21,7 +21,7 @@ export default function LiveResults() {
           <p className="quiet-kicker">Live shortlist · {DOMAIN_CONFIG[domain].label}</p>
           <h1>{products.length} current options, with reasons.</h1>
         </div>
-        <button type="button" className="quiet-button" onClick={returnToDecisions}>Revise decisions</button>
+        <button type="button" className="quiet-button" onClick={continueShopping}>Choose more <span aria-hidden>+</span></button>
         <p>{summary}</p>
         <div className="live-proof"><span aria-hidden>●</span> Sourced live through OpenAI from Shopify Global Catalog. Prices can change at the merchant.</div>
       </header>
