@@ -1,4 +1,5 @@
 import type { DecisionAnswers, DecisionDomain } from "../types.js";
+import { DEMO_DELIVERY_ADDRESS } from "./country.js";
 
 export interface DecisionOption {
   value: string;
@@ -12,6 +13,10 @@ export interface DecisionQuestion {
   prompt: string;
   detail: string;
   multiple?: boolean;
+  /** "text" renders a free-text input instead of option chips. */
+  kind?: "options" | "text";
+  defaultValue?: string;
+  placeholder?: string;
   options: DecisionOption[];
 }
 
@@ -41,16 +46,14 @@ const sharedStorePreference: DecisionQuestion = {
 };
 
 const sharedDelivery: DecisionQuestion = {
-  id: "ships_to",
+  id: "delivery_address",
   eyebrow: "Delivery",
   prompt: "Where should it arrive?",
-  detail: "This becomes a live availability signal for Shopify Catalog.",
-  options: [
-    { value: "NG", label: "Nigeria", hint: "Show offers available to Nigeria" },
-    { value: "US", label: "United States" },
-    { value: "GB", label: "United Kingdom" },
-    { value: "CA", label: "Canada" },
-  ],
+  detail: "A demo address is prefilled — keep it or type your own. The agent derives your country from it for live Shopify availability.",
+  kind: "text",
+  defaultValue: DEMO_DELIVERY_ADDRESS,
+  placeholder: DEMO_DELIVERY_ADDRESS,
+  options: [],
 };
 
 export const DECISION_QUESTIONS: Record<DecisionDomain, DecisionQuestion[]> = {
@@ -185,13 +188,20 @@ export const DECISION_QUESTIONS: Record<DecisionDomain, DecisionQuestion[]> = {
 export function answersToPrompt(domain: DecisionDomain, answers: Record<string, string[]>) {
   const questions = DECISION_QUESTIONS[domain];
   return questions
-    .filter((question) => question.id !== "ships_to")
+    .filter((question) => question.id !== "delivery_address")
     .map((question) => `${question.prompt} ${answers[question.id]?.join(", ") || "not specified"}`)
     .join("\n");
 }
 
 export const requiredQuestionIds = (domain: DecisionDomain) =>
   DECISION_QUESTIONS[domain].map((question) => question.id);
+
+export function isValidAnswerValues(question: DecisionQuestion, values: string[]): boolean {
+  if (values.length < 1 || values.length > (question.multiple ? 2 : 1)) return false;
+  if (new Set(values).size !== values.length) return false;
+  if (question.kind === "text") return values.every((value) => value.trim().length >= 3 && value.trim().length <= 200);
+  return values.every((value) => question.options.some((option) => option.value === value));
+}
 
 export function validateDecisionAnswers(domain: DecisionDomain, value: unknown): DecisionAnswers | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -207,7 +217,9 @@ export function validateDecisionAnswers(domain: DecisionDomain, value: unknown):
     if (!raw.every((item): item is string => typeof item === "string")) return null;
     const values = raw.map((item) => item.trim());
     if (new Set(values).size !== values.length) return null;
-    if (!values.every((item) => question.options.some((option) => option.value === item))) return null;
+    if (question.kind === "text") {
+      if (!values.every((item) => item.length >= 3 && item.length <= 200)) return null;
+    } else if (!values.every((item) => question.options.some((option) => option.value === item))) return null;
     answers[question.id] = values;
   }
   return answers;

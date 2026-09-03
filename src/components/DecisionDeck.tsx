@@ -23,6 +23,15 @@ export default function DecisionDeck() {
     return () => window.clearTimeout(timer);
   }, [agentAnswerFlash]);
 
+  useEffect(() => {
+    if (!domain) return;
+    for (const question of DECISION_QUESTIONS[domain]) {
+      if (question.kind === "text" && question.defaultValue && !useStore.getState().answers[question.id]?.length) {
+        useStore.getState().setDecisionAnswer(question.id, [question.defaultValue]);
+      }
+    }
+  }, [domain]);
+
   const questions = domain ? DECISION_QUESTIONS[domain] : [];
   const required = domain ? requiredQuestionIds(domain) : [];
   const completed = required.filter((id) => answers[id]?.length).length;
@@ -71,6 +80,23 @@ export default function DecisionDeck() {
                 <p className="quiet-kicker">{question.eyebrow}</p>
                 <h2 id={`decision-title-${question.id}`}>{question.prompt}</h2>
                 <p>{question.detail}</p>
+                {question.kind === "text" ? (
+                  <div className="decision-text-field">
+                    <input
+                      type="text"
+                      className="decision-address-input"
+                      value={selected[0] ?? ""}
+                      placeholder={question.placeholder}
+                      aria-label={question.prompt}
+                      maxLength={200}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setDecisionAnswer(question.id, value.trim() ? [value] : []);
+                      }}
+                    />
+                    <small className="decision-text-field__note">Demo address prefilled — you can keep it and continue.</small>
+                  </div>
+                ) : (
                 <div className="decision-options" role="group" aria-label={question.prompt}>
                   {question.options.map((option) => {
                     const active = selected.includes(option.value);
@@ -88,6 +114,7 @@ export default function DecisionDeck() {
                     );
                   })}
                 </div>
+                )}
               </div>
             </section>
           );

@@ -9,7 +9,7 @@ const validPayload = {
     store_preference: ["no preference"],
     food_priority: ["high protein"],
     budget: ["50"],
-    ships_to: ["NG"],
+    delivery_address: ["12 Admiralty Way, Lekki Phase 1, Lagos, Nigeria"],
   },
 };
 

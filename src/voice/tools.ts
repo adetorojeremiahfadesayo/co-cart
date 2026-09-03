@@ -1,4 +1,4 @@
-import { DECISION_QUESTIONS, requiredQuestionIds } from "../decision/questions";
+import { DECISION_QUESTIONS, isValidAnswerValues, requiredQuestionIds } from "../decision/questions";
 import { DOMAIN_CONFIG } from "../data/catalog";
 import { startCurrentLiveSearch } from "../agent/startCurrentSearch";
 import { useStore } from "../store/useStore";
@@ -34,6 +34,7 @@ export function getAccessibleSnapshot() {
     prompt: question.prompt,
     detail: question.detail,
     choose_up_to: question.multiple ? 2 : 1,
+    free_text: question.kind === "text",
     selected_values: state.answers[question.id] ?? [],
     choices: question.options.map((option, optionIndex) => ({ number: optionIndex + 1, value: option.value, label: option.label, hint: option.hint })),
   }));
@@ -91,8 +92,7 @@ export async function executeVoiceTool(name: string, args: VoiceToolArguments) {
       if (!Array.isArray(args.values) || args.values.some((value) => typeof value !== "string")) throw new Error("values must be a list of offered choice values.");
       const values = args.values.map((value) => (value as string).trim());
       const max = question.multiple ? 2 : 1;
-      if (values.length < 1 || values.length > max || new Set(values).size !== values.length) throw new Error(`Choose between 1 and ${max} unique option(s).`);
-      if (!values.every((value) => question.options.some((option) => option.value === value))) throw new Error("Use only values offered for this question.");
+      if (!isValidAnswerValues(question, values)) throw new Error(question.kind === "text" ? "Provide one short free-text value for this question." : `Choose between 1 and ${max} unique option(s), using only values offered for this question.`);
       state.setDecisionAnswer(questionId, values, "agent");
       return { ok: true, message: `Recorded ${values.join(" and ")}.`, state: getAccessibleSnapshot() };
     }

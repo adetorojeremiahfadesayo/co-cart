@@ -1,4 +1,5 @@
 import { validateDecisionAnswers } from "../src/decision/questions.ts";
+import { countryFromAddress } from "../src/decision/country.ts";
 import { executeShopifyAgentTool, OPENAI_SHOPIFY_FUNCTION_TOOLS, UCP_AGENT_PROFILE } from "./shopifyMcp.ts";
 import { fetchWithTransientRetry } from "./fetchWithRetry.ts";
 
@@ -283,7 +284,11 @@ export async function handleLiveSearch(request: Request): Promise<Response> {
   activeSearches += 1;
 
   const model = process.env.OPENAI_MODEL || "gpt-5.6";
-  const brief = Object.entries(answers).map(([key, values]) => `${key}: ${values.join(", ")}`).join("\n");
+  const deliveryAddress = answers.delivery_address?.[0];
+  const derivedCountry = deliveryAddress ? countryFromAddress(deliveryAddress) : null;
+  const brief = Object.entries(answers)
+    .map(([key, values]) => `${key}: ${values.join(", ")}`)
+    .join("\n") + (derivedCountry ? `\nderived_country: ${derivedCountry}` : "");
   const encoder = new TextEncoder();
   const abortController = new AbortController();
   const abortFromRequest = () => abortController.abort(request.signal.reason);
@@ -330,6 +335,7 @@ export async function handleLiveSearch(request: Request): Promise<Response> {
                   "For every finalist, return sourceId as the exact gid://shopify/ProductVariant/... ID from a Shopify function output.",
                   "Do not repeat merchant, price, URL, image, or title facts in the structured selection; the server reconstructs those from Shopify output.",
                   "Weigh the buyer's decision_style (crowd favourite, best value, hidden gem, industry standard) and store_preference (no preference, big-name stores, smaller independent stores) when choosing finalists and assigning each classification.",
+                  "The buyer's delivery address is free text; the server adds a derived_country line (NG, US, GB, or CA). Always pass that derived_country value as address_country to every shopify_* function call.",
                   `Classify every finalist as exactly one of: ${RECOMMENDATION_CLASSES.join(", ")}.`,
                   "Use Top-rated choice only when the Shopify output contains explicit rating or review evidence. Never invent ratings, review counts, merchant quality, or brand reputation.",
                   "Treat each classification as a concise editorial role supported by the live evidence and the buyer's requested recommendation style.",

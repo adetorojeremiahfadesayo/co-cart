@@ -1,5 +1,5 @@
 import { cancelActiveSearch, runCoordinatedSearch } from "../agent/searchCoordinator";
-import { DECISION_QUESTIONS, requiredQuestionIds } from "../decision/questions";
+import { DECISION_QUESTIONS, isValidAnswerValues, requiredQuestionIds } from "../decision/questions";
 import { checkConstraints, liveProductById, projectedCart, useStore } from "../store/useStore";
 import { formatCurrencyTotals, formatMoney } from "../utils/money";
 import type { DecisionDomain, Preferences } from "../types";
@@ -98,16 +98,15 @@ const tools = [
     },
     {
       name: "set-decision-answer",
-      description: "Answer one visible decision card. Use option values from get-decision-state; multiple-choice questions accept at most two values.",
+      description: "Answer one visible decision card. Use option values from get-decision-state; multiple-choice questions accept at most two values; free-text cards (delivery address) accept one plain-text value.",
       inputSchema: { type: "object", properties: { questionId: { type: "string" }, values: { type: "array", items: { type: "string" }, maxItems: 2 } }, required: ["questionId", "values"] },
       execute: async (args: { questionId?: unknown; values?: unknown }) => audited("set-decision-answer", args, () => {
         const domain = requireDomain();
         if (!domain) return err("Choose a category first.");
         const question = DECISION_QUESTIONS[domain].find((item) => item.id === args.questionId);
         if (!question || !Array.isArray(args.values)) return err("Unknown decision question or invalid values.");
-        const values = args.values.filter((value): value is string => typeof value === "string");
-        const valid = values.length > 0 && values.length <= (question.multiple ? 2 : 1) && values.every((value) => question.options.some((option) => option.value === value));
-        if (!valid) return err(`Use ${question.multiple ? "one or two" : "one"} valid option value(s) for ${question.id}.`);
+        const values = args.values.filter((value): value is string => typeof value === "string").map((value) => value.trim());
+        if (!isValidAnswerValues(question, values)) return err(question.kind === "text" ? `Provide one short free-text value for ${question.id}.` : `Use ${question.multiple ? "one or two" : "one"} valid option value(s) for ${question.id}.`);
         useStore.getState().setDecisionAnswer(question.id, values, "agent");
         return text({ message: "Decision updated in the visible UI.", questionId: question.id, values });
       }),
