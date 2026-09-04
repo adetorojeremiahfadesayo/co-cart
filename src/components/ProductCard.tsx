@@ -4,9 +4,11 @@ import { formatMoney } from "../utils/money";
 export default function ProductCard({
   id,
   highlighted,
+  finalPick = false,
 }: {
   id: string;
   highlighted: boolean;
+  finalPick?: boolean;
 }) {
   const cart = useStore((s) => s.cart);
   const preferences = useStore((s) => s.preferences);
@@ -45,7 +47,7 @@ export default function ProductCard({
       <div className="flex flex-1 flex-col gap-1.5 p-4">
         {p.recommendationClass && (
           <span className="recommendation-class" title="The agent's assessment from live listing data, not a verified rating">
-            Agent’s pick · {p.recommendationClass}
+            {finalPick ? "Agent’s final pick · " : ""}{p.recommendationClass}
           </span>
         )}
         <h3 className="font-display text-base font-extrabold leading-snug">{p.name}</h3>

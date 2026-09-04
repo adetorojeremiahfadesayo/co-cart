@@ -1,5 +1,5 @@
 {
-  "summary": "Four live, available quick-dinner options stood out for strong review evidence and at least 40 g of protein per pouch. Each takes about 10 minutes with boiling water. Availability is confirmed, but delivery fees and final eligibility for Lagos should be checked at checkout.",
+  "summary": "Five available, budget-matching dinners with strong review evidence and 10-minute preparation. The first two best fit a crowd-favourite decision style; all provide at least 41 g protein per pouch.",
   "products": [
     {
       "id": "shopify-gid---shopify-ProductVariant-40193175978117-0",
@@ -13,108 +13,132 @@
       "description": "Chicken Alfredo Pasta: White Chicken with Pasta Noodles in Alfredo Sauce We’ve packed in 53 grams of protein using real chicken breast, creamy cheeses, and a craft-style alfredo sauce. And because our ingredients are freeze-dried in one of the best facilities in the USA, our Chicken Alfredo Pasta is mush-free, so you can recharge with whole ingredients that hit the spot.",
       "emoji": "M",
       "tags": [
+        "53 g protein",
         "10-minute prep",
-        "53 g protein per pouch",
-        "340 ratings",
-        "two servings"
+        "strong ratings"
       ],
       "demoOnly": false,
       "imageUrl": "https://cdn.shopify.com/s/files/1/0276/4714/8165/products/alfredo-frontcopy-removebg.png",
-      "productUrl": "https://www.whittakermountaineering.com/products/copy-of-thai-curry-freeze-dried-meal?variant=40193175978117&_gsid=A5gwhWHWYKDq&utm_source=shopify&utm_medium=catalog",
-      "checkoutUrl": "https://www.whittakermountaineering.com/cart/40193175978117:1?_gsid=A5gwhWHWYKDq&utm_source=shopify&utm_medium=catalog",
-      "recommendationClass": "Top-rated choice",
-      "recommendation": "The clearest crowd favourite: 4.9/5 from 340 ratings, with 53 g of protein and a comforting creamy pasta profile.",
+      "productUrl": "https://www.whittakermountaineering.com/products/copy-of-thai-curry-freeze-dried-meal?variant=40193175978117&_gsid=cVmh3vNk3Wi9&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://www.whittakermountaineering.com/cart/40193175978117:1?_gsid=cVmh3vNk3Wi9&utm_source=shopify&utm_medium=catalog",
+      "recommendationClass": "Best overall match",
+      "recommendation": "Standout combination of 4.9/5 from 339 reviews, 53 g protein per pouch, and 10-minute preparation.",
       "tradeoffs": [
-        "Protein figure is for the full two-serving pouch",
-        "Creamy pasta may feel heavy",
-        "Contains dairy and wheat ingredients"
+        "Freeze-dried rather than fresh",
+        "Contains milk and wheat",
+        "Requires boiling water"
       ]
     },
     {
-      "id": "shopify-gid---shopify-ProductVariant-43625735028990-1",
+      "id": "shopify-gid---shopify-ProductVariant-40521025290424-1",
+      "sourceId": "gid://shopify/ProductVariant/40521025290424",
+      "domain": "meals",
+      "name": "Beef Stroganoff | Peak Refuel",
+      "category": "meals",
+      "price": 20700,
+      "currency": "NGN",
+      "merchant": "Adventure Outfitters",
+      "description": "HIGH PROTEIN | 100% REAL MEAT | PREMIUM INGREDIENTS - Beef Stroganoff: Beef, Rotini Noodles, & Mushrooms with Cream Cheese After a long day of following your compass, settle down with some home-style stroganoff mixed with firm spiral noodles, real ground beef, mushrooms, spices, and pure goodness. Now how do they do that? By only using premium, freeze-dried, all-natural ingredients that keep their shape, taste, and nutritional value. Giving you 41 grams of protein, 30% of your daily iron, and 25",
+      "emoji": "M",
+      "tags": [
+        "41 g protein",
+        "1,953 reviews",
+        "10-minute prep"
+      ],
+      "demoOnly": false,
+      "imageUrl": "https://cdn.shopify.com/s/files/1/2518/0872/products/Capture_f6e49f10-41a6-4f4c-87c3-60dbcbd599f2.gif",
+      "productUrl": "https://www.adventureoutfitters.ca/products/beef-stroganoff-by-peak-refuel?variant=40521025290424&_gsid=cVmh3vNk3Wi9&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://www.adventureoutfitters.ca/cart/40521025290424:1?_gsid=cVmh3vNk3Wi9&utm_source=shopify&utm_medium=catalog",
+      "recommendationClass": "Trusted standard",
+      "recommendation": "The strongest crowd signal: 1,953 reviews, alongside 41 g protein per pouch and quick preparation.",
+      "tradeoffs": [
+        "Its 4.4/5 score is lower than the other finalists",
+        "Contains milk and wheat",
+        "Two servings are packaged in one pouch"
+      ]
+    },
+    {
+      "id": "shopify-gid---shopify-ProductVariant-40193213038725-2",
+      "sourceId": "gid://shopify/ProductVariant/40193213038725",
+      "domain": "meals",
+      "name": "Chicken Coconut Curry",
+      "category": "meals",
+      "price": 14.99,
+      "currency": "USD",
+      "merchant": "Whittaker Mountaineering",
+      "description": "Chicken Coconut Curry: White Chicken, Rice, & Vegetables With a Coconut Curry Sauce It's the end of a long day in the backcountry and you're craving a home-cooked meal. Enter: Chicken Coconut Curry. With juicy chicken, rice, vegetables, and a coconut curry sauce that is out of this world, you'll be glad you packed this. And yes, you read that right - 44g of protein per pouch!",
+      "emoji": "M",
+      "tags": [
+        "44 g protein",
+        "4.8 rating",
+        "10-minute prep"
+      ],
+      "demoOnly": false,
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0276/4714/8165/products/PEAK_REFUEL_FRONT_LABEL_THAICURRY_FINAL.png",
+      "productUrl": "https://www.whittakermountaineering.com/products/chicken-coconut-curry?variant=40193213038725&_gsid=cVmh3vNk3Wi9&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://www.whittakermountaineering.com/cart/40193213038725:1?_gsid=cVmh3vNk3Wi9&utm_source=shopify&utm_medium=catalog",
+      "recommendationClass": "Top-rated choice",
+      "recommendation": "Highly rated at 4.8/5 from 221 reviews, with 44 g protein per pouch and a rice-based curry profile.",
+      "tradeoffs": [
+        "Freeze-dried meal",
+        "Requires boiling water",
+        "Two servings per pouch"
+      ]
+    },
+    {
+      "id": "shopify-gid---shopify-ProductVariant-43625735028990-3",
       "sourceId": "gid://shopify/ProductVariant/43625735028990",
       "domain": "meals",
       "name": "Peak Refuel Pouch - Chicken Pesto Pasta - 100% Freeze Dried Meals",
       "category": "meals",
-      "price": 21900,
+      "price": 21800,
       "currency": "NGN",
       "merchant": "Wild Valley Supply Co.",
       "description": "Ingredients Pesto sauce (heavy cream [cream, carrageenan], pesto [basil, canola oil, parmesan cheese (pasteurized part-skim milk, cheese culture, salt, enzymes], garlic, black pepper), instant ziti (durum flour [wheat], niacin, ferrous sulfate [iron], thiamine mononitrate, riboflavin and folic acid), cooked diced seasoned chicken white meat (chicken white meat, salt) Contains:Milk, Wheat Details After a long day of following your compass, settle down with some Italian-style pesto sauce mixed wit",
       "emoji": "M",
       "tags": [
-        "10-minute prep",
-        "43 g protein per pouch",
-        "220 reviews",
-        "shelf-stable"
+        "43 g protein",
+        "4.8 rating",
+        "10-minute prep"
       ],
       "demoOnly": false,
       "imageUrl": "https://cdn.shopify.com/s/files/1/0520/9138/8063/products/ScreenShot2022-10-20at3.53.05PM.png",
-      "productUrl": "https://wildvalley.ca/products/peak-refuel-pouch-chicken-pesto-pasta-100-freeze-dried-meals?variant=43625735028990&_gsid=A5gwhWHWYKDq&utm_source=shopify&utm_medium=catalog",
-      "checkoutUrl": "https://wildvalley.ca/cart/43625735028990:1?_gsid=A5gwhWHWYKDq&utm_source=shopify&utm_medium=catalog",
-      "recommendationClass": "Best overall match",
-      "recommendation": "Strong balance of popularity, protein and speed, backed by a 4.8/5 rating from 220 reviews and 43 g of protein per pouch.",
+      "productUrl": "https://wildvalley.ca/products/peak-refuel-pouch-chicken-pesto-pasta-100-freeze-dried-meals?variant=43625735028990&_gsid=cVmh3vNk3Wi9&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://wildvalley.ca/cart/43625735028990:1?_gsid=cVmh3vNk3Wi9&utm_source=shopify&utm_medium=catalog",
+      "recommendationClass": "Top-rated choice",
+      "recommendation": "A well-reviewed protein-heavy option with 4.8/5 from 220 reviews and 43 g protein per pouch.",
       "tradeoffs": [
         "Contains milk and wheat",
-        "High-calorie pouch",
-        "Requires boiling water"
+        "Calorie-dense",
+        "Requires hot water"
       ]
     },
     {
-      "id": "shopify-gid---shopify-ProductVariant-41480161820775-2",
-      "sourceId": "gid://shopify/ProductVariant/41480161820775",
+      "id": "shopify-gid---shopify-ProductVariant-43656601239775-4",
+      "sourceId": "gid://shopify/ProductVariant/43656601239775",
       "domain": "meals",
-      "name": "Peak Refuel - Venison Country Casserole",
+      "name": "Beef Pasta Marinara",
       "category": "meals",
-      "price": 15.99,
-      "currency": "USD",
-      "merchant": "BDS Tactical Gear",
-      "description": "I wanted to create a meal that embodied the taste of a home-cooked meal while still providing the best fuel out there. With the perfect amount of rice, the creamiest sauce, and delicious veggies, you'll feel like you're sitting at a dinner table even in the deepest part of the backcountry. This will definitely leave you wanting more - I'm pumped for you to try it! -Chad Preparation Instructions: 1. Open pouch at tear mark. Remove oxygen absorber. 2. Carefully add 1 cup (8 oz) boiling water to po",
-      "emoji": "M",
-      "tags": [
-        "10-minute prep",
-        "40 g protein per pouch",
-        "136 ratings",
-        "hearty dinner"
-      ],
-      "demoOnly": false,
-      "imageUrl": "https://cdn.shopify.com/s/files/1/0257/0049/9559/files/VenisonCountryCasserole.jpg",
-      "productUrl": "https://www.bdstacticalgear.com/products/peak-refuel-backcountry-bison-bowl-copy?variant=41480161820775&_gsid=A5gwhWHWYKDq&utm_source=shopify&utm_medium=catalog",
-      "checkoutUrl": "https://www.bdstacticalgear.com/cart/41480161820775:1?_gsid=A5gwhWHWYKDq&utm_source=shopify&utm_medium=catalog",
-      "recommendationClass": "Best value",
-      "recommendation": "A comparatively economical finalist that still supplies 40 g of protein, with reassuring 4.8/5 feedback from 136 ratings.",
-      "tradeoffs": [
-        "Venison has a more distinctive flavour than chicken",
-        "Contains milk and wheat",
-        "Protein figure covers the whole two-serving pouch"
-      ]
-    },
-    {
-      "id": "shopify-gid---shopify-ProductVariant-43656900640991-3",
-      "sourceId": "gid://shopify/ProductVariant/43656900640991",
-      "domain": "meals",
-      "name": "Sweet Pork & Rice",
-      "category": "meals",
-      "price": 20000,
+      "price": 21400,
       "currency": "NGN",
       "merchant": "Near Zero",
-      "description": "PEAK REFUEL - Freeze-dried meal HIGH PROTEIN | 100% REAL MEAT | PREMIUM INGREDIENTS - Sweet Pork & Rice: Shredded Pork with Rice & Vegetables with Brown Sugar Glaze Details When it’s time to settle in by the fire, savor it sweeter with Peak Refuel’s Sweet Pork and Rice. With a kick of chili peppers, dive into this medley of tender pulled pork, white rice, black beans, veggies, and a dash of cilantro and spices. Oh, and did we mention our pork is made of, well, pork? We steer clear of fillers or ",
+      "description": "PEAK REFUEL - Freeze-dried meal HIGH PROTEIN | 100% REAL MEAT | PREMIUM INGREDIENTS - Beef Pasta Marinara Beef crumbles with pasta noodles in marinara sauce Details After a long day of following your compass, settle down with some home-style marinara mixed with firm spiral noodles, real ground beef, vegetables, spices, and pure goodness. Now how do we do that? By only using premium, freeze-dried, all-natural ingredients that keep their shape, taste, and nutritional value. Giving you 49 grams of ",
       "emoji": "M",
       "tags": [
+        "49 g protein",
         "10-minute prep",
-        "40 g protein per pouch",
-        "192 ratings",
-        "no listed allergens"
+        "hearty option"
       ],
       "demoOnly": false,
-      "imageUrl": "https://cdn.shopify.com/s/files/1/0662/3327/0495/products/SweetPork.png",
-      "productUrl": "https://nearzero.co/products/sweet-pork-rice?variant=43656900640991&_gsid=A5gwhWHWYKDq&utm_source=shopify&utm_medium=catalog",
-      "checkoutUrl": "https://nearzero.co/cart/43656900640991:1?_gsid=A5gwhWHWYKDq&utm_source=shopify&utm_medium=catalog",
-      "recommendationClass": "Trusted standard",
-      "recommendation": "A well-established option with 192 ratings, 40 g of protein per pouch and a complete mix of pork, rice, beans and vegetables.",
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0662/3327/0495/products/BeefPasta_1.png",
+      "productUrl": "https://nearzero.co/products/beef-pasta-marinara?variant=43656601239775&_gsid=cVmh3vNk3Wi9&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://nearzero.co/cart/43656601239775:1?_gsid=cVmh3vNk3Wi9&utm_source=shopify&utm_medium=catalog",
+      "recommendationClass": "Best value",
+      "recommendation": "Provides 49 g protein per pouch and has substantial product-level review evidence, making it a filling budget-conscious alternative.",
       "tradeoffs": [
-        "Sweet glaze may not suit savoury preferences",
-        "Moderate 4.6/5 rating trails the leading picks",
-        "Two stated servings per pouch"
+        "Contains milk and wheat",
+        "Very calorie-dense",
+        "Variant-level rating evidence is limited"
       ]
     }
   ]

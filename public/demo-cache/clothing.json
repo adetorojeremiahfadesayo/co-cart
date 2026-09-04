@@ -1,123 +1,120 @@
 {
-  "summary": "Four live complete outfits fit the $75 ceiling used by the catalog search. The strongest crowd-backed minimal option is the brown cotton set; the white cotton-linen set has the most review evidence, while the beige set best matches strict minimalism but lacks ratings.",
+  "summary": "Four live, available complete outfits under the USD 75 catalog filter. The first two best reflect the crowd-favourite preference through explicit review evidence; confirm sizing and delivery terms to Lagos before checkout.",
   "products": [
     {
-      "id": "shopify-gid---shopify-ProductVariant-48896738394340-0",
-      "sourceId": "gid://shopify/ProductVariant/48896738394340",
+      "id": "shopify-gid---shopify-ProductVariant-50782150820137-0",
+      "sourceId": "gid://shopify/ProductVariant/50782150820137",
       "domain": "clothing",
-      "name": "Auric Two Piece Set - Ruched Detail Top and Wide Leg Pants Set in Brown",
+      "name": "Striped Knit Co-ord Set",
       "category": "clothing",
-      "price": 82600,
-      "currency": "NGN",
-      "merchant": "Lili's Rose",
-      "description": "The ruched crop top frames your shape while the wide leg Co-ord Pants bring that elongated, legs-for-days vibe, perfect for Minimalism lovers building a Capsule wardrobe. Dress it up for dinners or keep it sleek for desk-to-drinks; the rich brown hue plays beautifully with gold accents and soft glam. Auric delivers a modern take on coordinated dressing with clean lines and a flattering high-waist silhouette that moves with you. Style the set together for impact or split them up for Statement lay",
-      "emoji": "C",
-      "tags": [
-        "4.8/5 rating",
-        "76 reviews",
-        "minimal",
-        "100% cotton",
-        "wide-leg"
-      ],
-      "demoOnly": false,
-      "imageUrl": "https://cdn.shopify.com/s/files/1/0795/3052/4900/files/cbad4231b435c07bcf69292d78637e849fe324f4f289869e67c67ed33963529b.webp",
-      "productUrl": "https://lilisrose.com/products/auric-two-piece-set-ruched-detail-top-and-wide-leg-pants-set-in-brown?variant=48896738394340&_gsid=RjEuaD7XD1A3&utm_source=shopify&utm_medium=catalog",
-      "checkoutUrl": "https://lilisrose.com/cart/48896738394340:1?_gsid=RjEuaD7XD1A3&utm_source=shopify&utm_medium=catalog",
-      "recommendationClass": "Top-rated choice",
-      "recommendation": "Best crowd-favourite match: a clean brown cotton co-ord with a 4.8/5 rating from 76 reviews, pairing a ruched top with versatile wide-leg trousers.",
-      "tradeoffs": [
-        "The available variant shown is US 0.",
-        "Low/no-stretch fabric makes careful sizing important."
-      ]
-    },
-    {
-      "id": "shopify-gid---shopify-ProductVariant-50404462199081-1",
-      "sourceId": "gid://shopify/ProductVariant/50404462199081",
-      "domain": "clothing",
-      "name": "Cotton & Linen Backless Halter Top With Shorts Set",
-      "category": "clothing",
-      "price": 42,
+      "price": 69,
       "currency": "USD",
       "merchant": "Oozig",
-      "description": "Details Composition: 95% Cotton. 5% Linen Design: Knotted Thickness: Regular Material: Cotton&Linen Sleeve Length: Sleeveless Size & Fit Clothes Length: Regular Stretch: Non-stretch Fit Type: Regular Fit Pants Length: Short Pants Cm Inch Size US Bust Waist Hips Top Length Bottom Length Inseam XS 2 15.2 23.6 41.3 28.3 13 2.4 S 4 15.9 25.2 42.9 28.7 13.2 2.4 M 6 16.7 26.8 44.5 29.1 13.4 2.4 L 8/10 17.9 29.1 46.9 29.5 13.7 2.4 XL 12 19.1 31.5 49.2 29.9 13.9 2.4 XS 2 38.5 60 105 72 33 6 S 4 40.5 64 ",
+      "description": "Details Composition: 40% Viscose. 60% Acetate Thickness: Regular Material: Knit Size & Fit Stretch: Medium Stretch Fit Type: Regular Fit Cm Inch Size US Shoulder Bust Waist Hips Top Length Bottom Length XS 2 9.1 20.1 23.6 26.8 20.5 34.3 S 4 9.4 21.7 25.2 28.3 20.9 34.6 M 6 9.8 23.2 26.8 29.9 21.3 35 L 8/10 10.4 25.6 29.1 32.3 21.7 35.4 XL 12 11 28 31.5 34.6 22 35.8 XS 2 23 51 60 68 52 87 S 4 24 55 64 72 53 88 M 6 25 59 68 76 54 89 L 8/10 26.5 65 74 82 55 90 XL 12 28 71 80 88 56 91 Care Instructi",
       "emoji": "C",
       "tags": [
-        "4.3/5 rating",
-        "90 reviews",
-        "breathable",
-        "cotton-linen",
-        "warm weather"
+        "4.9/5 rating",
+        "15 ratings",
+        "two-piece",
+        "stretch knit"
       ],
       "demoOnly": false,
-      "imageUrl": "https://cdn.shopify.com/s/files/1/0900/9060/2793/files/B1715858214469_34990866-f707-44b8-bfad-fb2529360b2f.jpg",
-      "productUrl": "https://oozig.com/products/cotton-linen-backless-halter-top-with-shorts-set?variant=50404462199081&_gsid=RjEuaD7XD1A3&utm_source=shopify&utm_medium=catalog",
-      "checkoutUrl": "https://oozig.com/cart/50404462199081:1?_gsid=RjEuaD7XD1A3&utm_source=shopify&utm_medium=catalog",
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0900/9060/2793/files/B1748003566718.jpg",
+      "productUrl": "https://oozig.com/products/striped-knit-co-ord-set?variant=50782150820137&_gsid=W9WxymgrXKyq&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://oozig.com/cart/50782150820137:1?_gsid=W9WxymgrXKyq&utm_source=shopify&utm_medium=catalog",
       "recommendationClass": "Top-rated choice",
-      "recommendation": "Strongest review volume, with a 4.3/5 rating from 90 reviews; the white cotton-linen pairing is crisp, coordinated and suitable for Lagos heat.",
+      "recommendation": "Strongest crowd-backed option, with 4.9/5 from 15 ratings. The coordinated black-and-white palette and comfortable stretch knit make it easy to wear as a complete outfit.",
       "tradeoffs": [
-        "The available variant shown is XS.",
-        "The backless halter cut is more revealing than a classic minimalist outfit.",
-        "Shorts make it less suitable for formal settings."
+        "Stripes are less strictly minimal than a solid neutral",
+        "Hand washing or dry cleaning is recommended",
+        "Selected live variant is XS"
       ]
     },
     {
-      "id": "shopify-gid---shopify-ProductVariant-50131948830967-2",
-      "sourceId": "gid://shopify/ProductVariant/50131948830967",
+      "id": "shopify-gid---shopify-ProductVariant-49124542578923-1",
+      "sourceId": "gid://shopify/ProductVariant/49124542578923",
       "domain": "clothing",
-      "name": "Beige Pure Cotton Solid V-Neck  Co-Ords Set For Women",
+      "name": "Soft Dune Co-Ord Set",
       "category": "clothing",
-      "price": 849,
+      "price": 1499000,
+      "currency": "PKR",
+      "merchant": "Buraqstore",
+      "description": "This Stitched 2 PCs Include: Coat Pant Fabric: Viscose Technique: Printed Your new wardrobe favourite is here! This chic co-ord set features a coat-style shirt with an attached lining and comfortable pants with pockets. Designed to blend effortless style with all-day comfort, it’s perfect for brunches, coffee dates, vacations, and everything in between. With its flattering fit and versatile neutral tone, it’s the ultimate easy-to-style outfit for a chic, put-together look with minimal effort.",
+      "emoji": "C",
+      "tags": [
+        "5/5 rating",
+        "neutral tone",
+        "two-piece",
+        "trouser pockets"
+      ],
+      "demoOnly": false,
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0698/7844/8363/files/03920240806-p.jpg",
+      "productUrl": "https://buraqstore.com/products/soft-dune-co-ord-set?variant=49124542578923&_gsid=W9WxymgrXKyq&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://buraqstore.com/cart/49124542578923:1?_gsid=W9WxymgrXKyq&utm_source=shopify&utm_medium=catalog",
+      "recommendationClass": "Top-rated choice",
+      "recommendation": "A neutral, polished two-piece with a perfect 5/5 score from five ratings. The lined coat-style top and pocketed trousers deliver a complete look with minimal styling effort.",
+      "tradeoffs": [
+        "Rating is based on only five reviews",
+        "Printed fabric may not suit a strict solid-colour interpretation of minimal",
+        "Selected live variant is S"
+      ]
+    },
+    {
+      "id": "shopify-gid---shopify-ProductVariant-47770236354818-2",
+      "sourceId": "gid://shopify/ProductVariant/47770236354818",
+      "domain": "clothing",
+      "name": "Muted Navy Blue Minimalist Kala Cotton Co-ord Set",
+      "category": "clothing",
+      "price": 5999,
       "currency": "INR",
-      "merchant": "SanskrutiHomes.in",
-      "description": "Step into timeless elegance and effortless comfort with our Beige Pure Cotton Solid V-Neck Co-ords Set for Women, a versatile two-piece ensemble designed for the modern woman. Crafted from 100% pure cotton, this set is soft, breathable, and lightweight, ensuring all-day comfort while maintaining a polished, stylish appearance. The solid beige color exudes understated sophistication, making it a perfect choice for a variety of occasions—from casual outings and brunches to relaxed home wear or inf",
+      "merchant": "Ciceroni",
+      "description": "Crafted in breathable Kala cotton, this muted navy blue co-ord set brings together understated elegance and everyday comfort. The relaxed tunic features a clean split neckline with delicate button detailing and statement flared sleeves for a refined minimalist appeal. Paired with matching easy-fit pants, this versatile set offers effortless sophistication with a fluid silhouette designed for all-day wear. Where to Wear: Everyday outings, workwear, travel, casual brunches, relaxed festive gatheri",
       "emoji": "C",
       "tags": [
-        "minimalist",
-        "neutral",
-        "100% cotton",
-        "complete outfit",
-        "relaxed fit"
+        "minimal",
+        "breathable cotton",
+        "two-piece",
+        "inclusive size range"
       ],
       "demoOnly": false,
-      "imageUrl": "https://cdn.shopify.com/s/files/1/0478/3240/0025/files/SE-CS-127copy.jpg",
-      "productUrl": "https://www.sanskrutihomes.in/products/beige-pure-cotton-solid-v-neck-co-ords-set-for-women?variant=50131948830967&_gsid=RjEuaD7XD1A3&utm_source=shopify&utm_medium=catalog",
-      "checkoutUrl": "https://www.sanskrutihomes.in/cart/50131948830967:1?_gsid=RjEuaD7XD1A3&utm_source=shopify&utm_medium=catalog",
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0639/2741/9138/files/muted-navy-blue-minimalist-kala-cotton-co-ord-setsutra-art-of-clothingkurta-set-everyday-wearciceroni-9713833.jpg",
+      "productUrl": "https://ciceroni.in/products/muted-navy-blue-minimalist-kala-cotton-co-ord-set?variant=47770236354818&_gsid=W9WxymgrXKyq&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://ciceroni.in/cart/47770236354818:1?_gsid=W9WxymgrXKyq&utm_source=shopify&utm_medium=catalog",
       "recommendationClass": "Best overall match",
-      "recommendation": "The closest pure-minimalist option: solid beige, clean lines, a relaxed tailored shape and breathable cotton in a ready-made top-and-bottom outfit.",
+      "recommendation": "The closest match for the minimal style priority: a muted, understated cotton tunic-and-trouser outfit with a relaxed silhouette, elasticated waistband, and functional pockets.",
       "tradeoffs": [
-        "No rating or review evidence appears in the live listing.",
-        "The available variant shown is XS.",
-        "International delivery timing should be checked at checkout."
+        "No rating evidence was provided",
+        "Flared sleeves add a subtle statement detail",
+        "Selected live variant is XS"
       ]
     },
     {
-      "id": "shopify-gid---shopify-ProductVariant-53226776854822-3",
-      "sourceId": "gid://shopify/ProductVariant/53226776854822",
+      "id": "shopify-gid---shopify-ProductVariant-51353316655400-3",
+      "sourceId": "gid://shopify/ProductVariant/51353316655400",
       "domain": "clothing",
-      "name": "Libas Brown Floral Printed Front Slit Cotton Co-Ord Set",
+      "name": "Black Cotton Co-ord Set",
       "category": "clothing",
-      "price": 17,
-      "currency": "USD",
-      "merchant": "Shoplibas",
-      "description": "Our 2-piece brown printed cotton co-ord set features an a-line tunic with a mandarin collar and three-quarter sleeves. Complemented with matching Palazzos with a partially elasticated waistband and 2 pockets. Highlighted with floral Print, this style is perfect for work wear and casual wear.",
+      "price": 2199,
+      "currency": "INR",
+      "merchant": "Studio Thari",
+      "description": "Black Cotton Co-ord Set This sophisticated black cotton co-ord set combines minimalist design with exceptional comfort. Constructed from high-quality cotton, the matching separates create a cohesive silhouette that transitions seamlessly from day to evening. The neutral black palette offers unmatched styling flexibility—wear the pieces together for a coordinated statement or separately to expand your outfit options. Ideal for professionals seeking refined basics, this set delivers understated el",
       "emoji": "C",
       "tags": [
-        "4.5/5 rating",
-        "cotton",
-        "work-to-casual",
-        "pockets",
-        "budget-friendly"
+        "all black",
+        "100% cotton",
+        "two-piece",
+        "day-to-evening"
       ],
       "demoOnly": false,
-      "imageUrl": "https://cdn.shopify.com/s/files/1/0679/7862/5318/files/900089_8_Main.jpg",
-      "productUrl": "https://www.shoplibas.com/products/brown-floral-printed-front-slit-cotton-co-ord-set-900089?variant=53226776854822&_gsid=RjEuaD7XD1A3&utm_source=shopify&utm_medium=catalog",
-      "checkoutUrl": "https://www.shoplibas.com/cart/53226776854822:1?_gsid=RjEuaD7XD1A3&utm_source=shopify&utm_medium=catalog",
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0855/2539/7800/files/SHO00001-1.jpg",
+      "productUrl": "https://studiothari.in/products/black-cotton-co-ord-set?variant=51353316655400&_gsid=W9WxymgrXKyq&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://studiothari.in/cart/51353316655400:1?_gsid=W9WxymgrXKyq&utm_source=shopify&utm_medium=catalog",
       "recommendationClass": "Best value",
-      "recommendation": "An affordable cotton two-piece with a 4.5/5 rating, practical pockets and a comfortable partially elasticated waistband.",
+      "recommendation": "A versatile all-black cotton outfit that closely fits the minimal brief and can transition from daytime to evening wear; both pieces can also be styled separately.",
       "tradeoffs": [
-        "The rating is based on only four reviews.",
-        "The floral print is less minimal than the solid-color alternatives.",
-        "The available variant shown is S."
+        "No rating evidence was provided",
+        "Made to order with a stated 10–15 day dispatch window",
+        "Selected live variant is XS and sleeveless"
       ]
     }
   ]

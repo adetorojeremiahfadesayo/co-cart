@@ -149,7 +149,7 @@ const tools = [
     },
     {
       name: "start-live-search",
-      description: "Start the real OpenAI shopping agent. It searches Shopify Global Catalog through MCP and streams progress into the visible UI. It never falls back to demo data.",
+      description: "Start Co-Cart's verified search. An exact pre-captured demo brief replays its verified Shopify snapshot; every changed brief runs the live OpenAI and Shopify workflow.",
       inputSchema: { type: "object", properties: {} },
       execute: async (args: unknown) => audited("start-live-search", args, async () => {
         const state = useStore.getState();
@@ -162,8 +162,8 @@ const tools = [
         if (!searchId) return err("A live search is already running.");
         try {
           const result = await runCoordinatedSearch(domain, structuredClone(state.answers), { onStatus: (label, detail, status) => useStore.getState().addSearchEvent(searchId, label, detail, status) });
-          if (!useStore.getState().completeLiveSearch(searchId, result.products, result.summary)) return err("The search result was discarded because the shopping category changed.");
-          return text({ source: "live Shopify Global Catalog", summary: result.summary, products: result.products.map((product) => productSummary(product.id)) });
+          if (!useStore.getState().completeLiveSearch(searchId, result.products, result.summary, result.source)) return err("The search result was discarded because the shopping category changed.");
+          return text({ source: result.source === "warmed-snapshot" ? "recent verified Shopify snapshot" : "live Shopify Global Catalog", summary: result.summary, products: result.products.map((product) => productSummary(product.id)) });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           useStore.getState().failLiveSearch(searchId, message);
@@ -178,7 +178,7 @@ const tools = [
       execute: async (args: unknown) => audited("get-live-results", args, () => {
         const state = useStore.getState();
         if (state.stage !== "results" || !state.liveProducts.length) return err("No completed live Shopify search is available.");
-        return text({ source: "live Shopify Global Catalog", summary: state.searchSummary, products: state.liveProducts.map((product) => productSummary(product.id)) });
+        return text({ source: state.searchSource === "warmed-snapshot" ? "recent verified Shopify snapshot" : "live Shopify Global Catalog", summary: state.searchSummary, products: state.liveProducts.map((product) => productSummary(product.id)) });
       }),
     },
     {

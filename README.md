@@ -17,7 +17,7 @@
 ![WebMCP](https://img.shields.io/badge/WebMCP-14%20page%20tools-4C1D95.svg)
 ![OpenAI](https://img.shields.io/badge/OpenAI-Responses%20%2B%20Realtime-10A37F.svg)
 ![Shopify](https://img.shields.io/badge/Shopify-Global%20Catalog%20MCP-95BF47.svg)
-![Tests](https://img.shields.io/badge/tests-38%20passing-2E9C6E.svg)
+![Tests](https://img.shields.io/badge/tests-42%20passing-2E9C6E.svg)
 ![Netlify](https://img.shields.io/badge/Netlify-deployed-00C7B7.svg)
 
 *Built for the WebMCP Challenge*
@@ -295,7 +295,7 @@ For a blind or low-vision shopper, someone with limited motor control, or anyone
 
 Press **Shop by voice** on any screen. The microphone stays off until the shopper opens the panel and explicitly presses start — that is a hard privacy boundary, not a preference.
 
-Your audio goes over WebRTC straight to an OpenAI Realtime session. The agent reads the current screen through the same guarded tools that power WebMCP, speaks the available options aloud, records exact choices, loads the same verified category snapshot as the **Go** button, reads the results back, and can create cart proposals. Voice users are not sent down a weaker “accessible fallback” path — they get the same verified product records and human approval gate as everyone else.
+Your audio goes over WebRTC straight to an OpenAI Realtime session. The agent reads the current screen through the same guarded tools that power WebMCP, speaks the available options aloud, records exact choices, starts the same search as the **Go** button, reads the results back, and can create cart proposals. An exact pre-captured demo brief loads its matching verified Shopify snapshot; changed answers trigger a fresh live OpenAI → Shopify search. Voice users are not sent down a weaker accessibility path — they get the same verified product records and human approval gate as everyone else.
 
 High-stakes actions need **exact spoken phrases**,  a fuzzy "yeah okay sure" doesn't move money-adjacent state:
 
@@ -330,7 +330,7 @@ Vite runs a dev-only middleware for `/api/search` and `/api/realtime-session`, s
 
 > ⚠️ **Never create `VITE_OPENAI_API_KEY`.** Anything prefixed `VITE_` is inlined into the client bundle and shipped to every visitor. The key belongs in `OPENAI_API_KEY`, server-side, full stop.
 
-**Refresh the warmed demo snapshots** (makes 3 real, billed searches):
+**Refresh the three exact demo-brief snapshots** (makes 3 real, billed searches):
 
 ```bash
 npx tsx scripts/captureDemoCache.ts
@@ -375,7 +375,7 @@ The functions bundle straight from `netlify/functions/` with no porting — `ser
 ```bash
 npm run typecheck   # tsc -b
 npm run lint        # oxlint
-npm test            # vitest  → 38 tests, 7 files
+npm test            # vitest  → 42 tests, 8 files
 npm run build       # tsc -b && vite build
 ```
 
@@ -400,8 +400,7 @@ The suite is written as a **spec for the trust boundary**, so the test names rea
 ✓ keeps an agent cart change pending until the exact approval phrase
 ✓ cannot confirm a plan while proposals are unresolved
 ✓ creates a scoped Realtime client secret without exposing the server key
-<<<<<<< HEAD
-=======
+✓ replays a snapshot only when all six answers match its demo brief
 ```
 
 That last store test — *"treats missing allergen metadata as unknown rather than safe"* — is a small line with a big principle behind it. Absence of an allergen warning is not evidence of absence. For food, guessing optimistically is the one bug you genuinely cannot ship.
@@ -420,7 +419,6 @@ That last store test — *"treats missing allergen metadata as unknown rather th
 
 **An untrusted product description is untrusted input.** Product text comes from third-party merchants and flows into a model's context. The agent is instructed to treat catalog text as data, never instructions — and more importantly it *can't act* on instructions anyway: its only capabilities are the strict `shopify_*` functions the server validates. Prompt injection has nowhere to land.
 
->>>>>>> 873e30a (Add protected headless MCP search endpoint and batch page tool)
 ---
 
 ## Project layout
@@ -451,8 +449,6 @@ co-cart/
 └─ public/demo-cache/        ← real captured results, 3 domains
 ```
 
-<<<<<<< HEAD
-=======
 ---
 
 ## Honest limitations
@@ -460,7 +456,7 @@ co-cart/
 Because a README that only lists strengths isn't worth reading:
 
 - **The delivery address is demo-grade.** Shopify's catalog filter takes a *country*, not a street. The field accepts free text and derives the country from it — which is exactly what every checkout does, but it isn't validating that your street exists.
-- **The warmed snapshots age.** Every normal browser and voice search uses its category's recent verified Shopify snapshot so the experience stays fast and reliable. Prices and availability are point-in-time data, so re-capture before a demo that matters. The separate headless MCP endpoint always performs a live search.
+- **The exact demo snapshots age.** Each domain has one six-answer demo brief that replays a recently verified Shopify shortlist for a fast, reliable judge path. Change any answer — product type, decision style, store, priority, budget, or address — and browser and voice flows perform a fresh live OpenAI → Shopify search. Snapshot prices and availability are point-in-time data, so re-capture before a demo that matters. The separate headless MCP endpoint always performs a live search.
 - **WebMCP is still a proposal.** `navigator.modelContext` isn't in stable browsers yet, so the tool surface only lights up in a WebMCP-enabled host. That's a bet on where the web is going, and I'm comfortable making it.
 - **Headless MCP is intentionally search-only.** It returns verified results to server or CLI agents, but has no persistent user/cart identity. Browser-side WebMCP remains the right interface when a shopper is present to review proposals.
 - **The shortlist caps at six.** Deliberate — the whole point is reducing choice — but it means Co-Cart is a decision tool, not a search engine.
@@ -468,7 +464,6 @@ Because a README that only lists strengths isn't worth reading:
 
 ---
 
->>>>>>> 873e30a (Add protected headless MCP search endpoint and batch page tool)
 ## License
 
 MIT — see [LICENSE](LICENSE). Take it apart, learn from it, build something better.

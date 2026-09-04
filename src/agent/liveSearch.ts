@@ -60,7 +60,7 @@ export async function searchLiveCatalog(
   callbacks: LiveSearchCallbacks,
   signal?: AbortSignal,
 ): Promise<LiveSearchResult> {
-  const warmedFile = matchDemoCache(domain);
+  const warmedFile = matchDemoCache(domain, answers);
   if (warmedFile) {
     try {
       return await warmedDemoResult(warmedFile, callbacks, signal);

@@ -28,7 +28,7 @@ export default function LiveResults() {
         {products.map((product, index) => (
           <article key={product.id} className="live-result">
             <span className="live-result__rank">{String(index + 1).padStart(2, "0")}</span>
-            <ProductCard id={product.id} highlighted={index === 0} />
+            <ProductCard id={product.id} highlighted={index === 0} finalPick={index === 0} />
           </article>
         ))}
       </section>

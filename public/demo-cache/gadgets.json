@@ -1,37 +1,8 @@
 {
-  "summary": "Four live, budget-matching options prioritized for long battery life and backed by explicit catalog rating evidence. Confirm final delivery eligibility and charges to Lagos at checkout.",
+  "summary": "Four currently available finalists prioritize battery life and include explicit review evidence for a crowd-favourite decision. Confirm Lagos delivery, duties, and final checkout eligibility before ordering.",
   "products": [
     {
-      "id": "shopify-gid---shopify-ProductVariant-49301339799848-0",
-      "sourceId": "gid://shopify/ProductVariant/49301339799848",
-      "domain": "gadgets",
-      "name": "Sony WH-CH520 Wireless On-Ear Headphones (Black)",
-      "category": "gadgets",
-      "price": 56,
-      "currency": "AUD",
-      "merchant": "Lotte Duty Free Melbourne",
-      "description": "The WH-CH520 is a lightweight on-ear wireless headphone for casual use. Long battery-life, quick charging and handsfree voice calls, with multipoint, also make this great-value headphone an easy choice. A first for this category of headphone, the companion app provides many features, including adjustable sound and other custom settings. Key Features Lightweight on-ear Bluetooth v5.2 headphones Up to 50 hours battery life with quick charging (3mins = 90mins music) Multipoint connectivity and clea",
-      "emoji": "G",
-      "tags": [
-        "50-hour battery",
-        "23K+ ratings",
-        "quick charge",
-        "multipoint"
-      ],
-      "demoOnly": false,
-      "imageUrl": "https://cdn.shopify.com/s/files/1/0883/7120/0296/files/623348_1.jpg",
-      "productUrl": "https://melbourne.lottedutyfree.com.au/products/sony-wh-ch520-wireless-on-ear-headphones-black?variant=49301339799848&_gsid=UgukXQDYNLGw&utm_source=shopify&utm_medium=catalog",
-      "checkoutUrl": "https://melbourne.lottedutyfree.com.au/cart/49301339799848:1?_gsid=UgukXQDYNLGw&utm_source=shopify&utm_medium=catalog",
-      "recommendationClass": "Best overall match",
-      "recommendation": "Strongest crowd-favourite evidence in the shortlist, with 23,000+ product ratings, up to 50 hours of listening, quick charging and multipoint connectivity.",
-      "tradeoffs": [
-        "On-ear rather than over-ear",
-        "No active noise cancellation",
-        "International delivery should be confirmed at checkout"
-      ]
-    },
-    {
-      "id": "shopify-gid---shopify-ProductVariant-48931248799897-1",
+      "id": "shopify-gid---shopify-ProductVariant-48931248799897-0",
       "sourceId": "gid://shopify/ProductVariant/48931248799897",
       "domain": "gadgets",
       "name": "JBL Tune 520BT Wireless on-ear Headphones - Purple",
@@ -43,49 +14,78 @@
       "emoji": "G",
       "tags": [
         "57-hour battery",
-        "4.9 rating",
-        "fast charge",
-        "foldable"
+        "4.9/5 rating",
+        "290 reviews",
+        "multipoint",
+        "fast charging"
       ],
       "demoOnly": false,
       "imageUrl": "https://cdn.shopify.com/s/files/1/0575/3628/2777/files/01Front_Back_5950bcf7-d643-4f35-9963-e6d949bea430.png",
-      "productUrl": "https://www.plug.tech/products/jbl-tune-520bt-wireless-on-ear-headphones-purple?variant=48931248799897&_gsid=UgukXQDYNLGw&utm_source=shopify&utm_medium=catalog",
-      "checkoutUrl": "https://www.plug.tech/cart/48931248799897:1?_gsid=UgukXQDYNLGw&utm_source=shopify&utm_medium=catalog",
-      "recommendationClass": "Top-rated choice",
-      "recommendation": "The longest stated battery life here at up to 57 hours, paired with a 4.9/5 product rating from 260 reviews and fast USB-C charging.",
+      "productUrl": "https://www.plug.tech/products/jbl-tune-520bt-wireless-on-ear-headphones-purple?variant=48931248799897&_gsid=qahAGsiG7Yn9&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://www.plug.tech/cart/48931248799897:1?_gsid=qahAGsiG7Yn9&utm_source=shopify&utm_medium=catalog",
+      "recommendationClass": "Best overall match",
+      "recommendation": "Strongest battery-focused match: up to 57 hours, rapid charging, multipoint Bluetooth, and explicit 4.9/5 evidence from 290 reviews.",
       "tradeoffs": [
-        "Selected listing is marked Good condition",
-        "Purple is the selected colour",
-        "On-ear fit may provide less isolation than over-ear designs"
+        "On-ear fit may provide less isolation than over-ear headphones.",
+        "The selected listing shows a “Good” condition option; verify exact condition before checkout.",
+        "No active noise cancellation. "
       ]
     },
     {
-      "id": "shopify-gid---shopify-ProductVariant-7767277174835-2",
-      "sourceId": "gid://shopify/ProductVariant/7767277174835",
+      "id": "shopify-gid---shopify-ProductVariant-7766138191923-1",
+      "sourceId": "gid://shopify/ProductVariant/7766138191923",
       "domain": "gadgets",
-      "name": "Cowin E7 Wireless Bluetooth Headphones",
+      "name": "E7 Active Noise Cancelling Bluetooth Over-ear Headphones",
       "category": "gadgets",
-      "price": 39.99,
+      "price": 49.99,
       "currency": "USD",
       "merchant": "Cowinaudio",
-      "description": "Listen all week. 20 Hours playtime & charge for 10 mins & get over 1hr of playback. Put some bass in your Bluetooth. 45mm Drivers with high dynamic bass response. Easy on the ears. Our ear cushions are ergonomic & protein based with 90° swivel. What interruptions? CSR8635 Bluetooth 4.1 chip allows extended range with fewer drop-outs than any previous Cowin model. Speak Easy. Built-in voice-optimized microphone take phone calls hands-free. You're in control, Pause, play, skip & adjust the volume ",
+      "description": "CODE: 18OFF Cowin E7 Instruction manual Limited quantity，First come， First served. Professional Active Noise Cancelling Technology Proprietary 40mm Large-aperture Drivers. High-quality Built-in Microphone and NFC Technology. The Professional Protein Earpad and 90° Swiveling Earcups. A built-in 600mAh battery won't allow your headphones power off, you can enjoy your world without noise for 30 hours' long time.",
       "emoji": "G",
       "tags": [
+        "30-hour battery",
         "active noise cancellation",
-        "long playback",
-        "4.6 rating",
+        "high review volume",
         "over-ear"
       ],
       "demoOnly": false,
-      "imageUrl": "https://cdn.shopify.com/s/files/1/0022/8723/9219/files/cowin-e7-wireless-bluetooth-headphones-headphone-cowinaudio-black-743022.jpg",
-      "productUrl": "https://www.cowinaudio.com/products/cowin-e7-black-wireless-headphones?variant=7767277174835&_gsid=UgukXQDYNLGw&utm_source=shopify&utm_medium=catalog",
-      "checkoutUrl": "https://www.cowinaudio.com/cart/7767277174835:1?_gsid=UgukXQDYNLGw&utm_source=shopify&utm_medium=catalog",
-      "recommendationClass": "Best value",
-      "recommendation": "Balances long playback with active noise cancellation and substantial review evidence; the live variant carries a 4.6/5 rating from 168 reviews.",
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0022/8723/9219/products/e7-active-noise-cancelling-bluetooth-over-ear-headphones-headphone-cowinaudio-black-492668.jpg",
+      "productUrl": "https://www.cowinaudio.com/products/cowin-e7-noise-cancelling-headphone?variant=7766138191923&_gsid=qahAGsiG7Yn9&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://www.cowinaudio.com/cart/7766138191923:1?_gsid=qahAGsiG7Yn9&utm_source=shopify&utm_medium=catalog",
+      "recommendationClass": "Top-rated choice",
+      "recommendation": "The strongest crowd signal in the shortlist, with extensive product-level review evidence plus active noise cancellation and up to 30 hours of playback.",
       "tradeoffs": [
-        "Battery claims differ between the broader catalog metadata and variant description",
-        "Heavier over-ear construction",
-        "Uses older Bluetooth technology than some alternatives"
+        "Battery life is notably shorter than the 50–57-hour alternatives.",
+        "The exact variant rating is 4.1/5 from 948 reviews, below the broader product-level rating."
+      ]
+    },
+    {
+      "id": "shopify-gid---shopify-ProductVariant-41070154678354-2",
+      "sourceId": "gid://shopify/ProductVariant/41070154678354",
+      "domain": "gadgets",
+      "name": "SONY WH-CH520 Wireless Bluetooth Headphones",
+      "category": "gadgets",
+      "price": 36.74,
+      "currency": "GBP",
+      "merchant": "Hashtechguy",
+      "description": "On-ear headphones Passive noise-isolating Battery life: Up to 50 hours Bluetooth multipoint for switching between devices Microphone / volume / playback & functions control Good to know The adjustable headband and soft earcups are super comfy so you can rock out all day You can answer a call simply by clicking the button on the earcup – you won't even have to take your phone out of your pocket The high-quality built-in microphone and noise suppression tech means you'll be heard loud and clear on",
+      "emoji": "G",
+      "tags": [
+        "50-hour battery",
+        "quick charge",
+        "multipoint",
+        "lightweight"
+      ],
+      "demoOnly": false,
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0060/3039/3426/files/14_442d6868-fb34-4345-927f-b377d5ab4741.png",
+      "productUrl": "https://hashtechguy.com/products/sony-wh-ch520b-wireless-bluetooth-headphones?variant=41070154678354&_gsid=qahAGsiG7Yn9&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://hashtechguy.com/cart/41070154678354:1?_gsid=qahAGsiG7Yn9&utm_source=shopify&utm_medium=catalog",
+      "recommendationClass": "Trusted standard",
+      "recommendation": "A practical long-runtime option with up to 50 hours of playback, three-minute quick charging, multipoint pairing, and lightweight construction.",
+      "tradeoffs": [
+        "Only four reviews support the displayed 4.5/5 product rating.",
+        "Uses passive isolation rather than active noise cancellation.",
+        "Selected variant is blue."
       ]
     },
     {
@@ -101,20 +101,21 @@
       "emoji": "G",
       "tags": [
         "30-hour battery",
-        "4.8 rating",
+        "4.8/5 rating",
         "quick charge",
-        "foldable"
+        "foldable",
+        "EQ presets"
       ],
       "demoOnly": false,
       "imageUrl": "https://cdn.shopify.com/s/files/1/0240/9337/files/2-Studio_BT_Black_cd0148f1-1452-4c22-bc83-eb94b35e1f1a.jpg",
-      "productUrl": "https://www.jlab.com/products/jlab-studio-wireless-on-ear-headphones-black?variant=40342908862536&_gsid=UgukXQDYNLGw&utm_source=shopify&utm_medium=catalog",
-      "checkoutUrl": "https://www.jlab.com/cart/40342908862536:1?_gsid=UgukXQDYNLGw&utm_source=shopify&utm_medium=catalog",
-      "recommendationClass": "Budget hidden gem",
-      "recommendation": "A lower-cost option with 30-hour playback, a 4.8/5 variant rating, foldable construction and a useful quick-charge feature.",
+      "productUrl": "https://www.jlab.com/products/jlab-studio-wireless-on-ear-headphones-black?variant=40342908862536&_gsid=qahAGsiG7Yn9&utm_source=shopify&utm_medium=catalog",
+      "checkoutUrl": "https://www.jlab.com/cart/40342908862536:1?_gsid=qahAGsiG7Yn9&utm_source=shopify&utm_medium=catalog",
+      "recommendationClass": "Best value",
+      "recommendation": "Balances a 30-hour battery with a particularly useful quick-charge feature, foldable portability, customizable EQ presets, and explicit 4.8/5 rating evidence.",
       "tradeoffs": [
-        "Rating is based on only five reviews",
-        "Uses Micro-USB rather than USB-C",
-        "No active noise cancellation for listening"
+        "The rating is based on only five reviews.",
+        "Charges through Micro-USB rather than USB-C.",
+        "On-ear design may become less comfortable during very long sessions."
       ]
     }
   ]
