@@ -24,7 +24,7 @@
 
 </div>
 
-> **Update — 2026-09-04:** Co-Cart now opens with **open product discovery**: describe any product in plain language, upload a reference photo, or paste a product link. A server-side OpenAI step interprets the reference, asks only the missing questions, and shows an editable brief before the verified live Shopify search runs. Meals/Gadgets/Clothing remain as compact guided examples. Three new WebMCP tools (`set-shopping-request`, `answer-clarifying-question`, `confirm-shopping-brief`) expose the flow to agents (17 page tools total, 72 tests). See [CO-CART_DISCOVERY_HANDOFF.md](./CO-CART_DISCOVERY_HANDOFF.md).
+Co-Cart  opens with **open product discovery**: describe any product in plain language, upload a reference photo, or paste a product link. A server-side OpenAI step interprets the reference, asks only the missing questions, and shows an editable brief before the verified live Shopify search runs. Meals/Gadgets/Clothing remain as compact guided examples. Three  WebMCP tools (`set-shopping-request`, `answer-clarifying-question`, `confirm-shopping-brief`) expose the flow to agents (17 page tools total, 72 tests). See [CO-CART_DISCOVERY_HANDOFF.md](./CO-CART_DISCOVERY_HANDOFF.md).
 
 ## The moment that started this
 
