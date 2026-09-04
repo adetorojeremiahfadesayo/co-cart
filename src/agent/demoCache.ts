@@ -1,4 +1,4 @@
-import { DEMO_DELIVERY_ADDRESS } from "../decision/country";
+import { countryFromAddress, DEMO_DELIVERY_ADDRESS } from "../decision/country";
 import type { DecisionAnswers, DecisionDomain } from "../types";
 
 interface DemoCacheEntry {
@@ -8,7 +8,8 @@ interface DemoCacheEntry {
 }
 
 // Each entry is a recent, server-verified Shopify snapshot for one exact demo
-// brief. Any changed answer must use the live OpenAI -> Shopify search instead.
+// brief. Delivery is matched by country because Shopify availability is queried
+// at country level; any other changed answer uses the live OpenAI -> Shopify search.
 export const DEMO_CACHE_ENTRIES: DemoCacheEntry[] = [
   {
     domain: "meals",
@@ -48,10 +49,17 @@ export const DEMO_CACHE_ENTRIES: DemoCacheEntry[] = [
   },
 ];
 
+const signatureValue = (key: string, values: string[]) => {
+  if (key === "delivery_address") {
+    return [...values].map(countryFromAddress).sort().join(",");
+  }
+  return [...values].sort().join(",");
+};
+
 const signature = (answers: DecisionAnswers) =>
   Object.keys(answers)
     .sort()
-    .map((key) => `${key}=${[...answers[key]].sort().join(",")}`)
+    .map((key) => `${key}=${signatureValue(key, answers[key])}`)
     .join("&");
 
 export function matchDemoCache(domain: DecisionDomain, answers: DecisionAnswers): string | null {

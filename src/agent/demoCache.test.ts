@@ -12,13 +12,14 @@ describe("warmed demo cache", () => {
     delivery_address: [DEMO_DELIVERY_ADDRESS],
   };
 
-  it("replays a verified snapshot only for its exact captured brief", () => {
+  it("replays a verified snapshot for its captured brief and delivery country", () => {
     expect(matchDemoCache("gadgets", gadgetAnswers)).toBe("gadgets.json");
+    expect(matchDemoCache("gadgets", { ...gadgetAnswers, delivery_address: ["Nigeria"] })).toBe("gadgets.json");
   });
 
   it("uses live search when any decision differs from the captured brief", () => {
     expect(matchDemoCache("gadgets", { ...gadgetAnswers, gadget_type: ["smartwatch"] })).toBeNull();
     expect(matchDemoCache("gadgets", { ...gadgetAnswers, budget: ["100"] })).toBeNull();
-    expect(matchDemoCache("gadgets", { ...gadgetAnswers, delivery_address: ["Nigeria"] })).toBeNull();
+    expect(matchDemoCache("gadgets", { ...gadgetAnswers, delivery_address: ["United States"] })).toBeNull();
   });
 });
