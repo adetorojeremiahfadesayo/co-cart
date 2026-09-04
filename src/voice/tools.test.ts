@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useStore } from "../store/useStore";
-import type { Product } from "../types";
+import type { ClarifyingQuestion, DiscoveryReference, Product, ShoppingBrief } from "../types";
 import { executeVoiceTool, getAccessibleSnapshot } from "./tools";
 
 const liveProduct: Product = {
@@ -18,11 +18,35 @@ const liveProduct: Product = {
   demoOnly: false,
 };
 
+const discoveryReference: DiscoveryReference = {
+  mode: "text",
+  interpretedProduct: "wireless headphones",
+  visibleAttributes: [],
+  uncertaintyNotes: [],
+};
+
+const discoveryBrief: ShoppingBrief = {
+  productType: "wireless headphones",
+  priorities: [],
+  exclusions: [],
+};
+
+const countryQuestion: ClarifyingQuestion = {
+  id: "delivery_country",
+  prompt: "Where should it arrive?",
+  kind: "single",
+  field: "deliveryCountry",
+  options: [{ value: "NG", label: "Nigeria" }, { value: "US", label: "United States" }],
+  required: true,
+};
+
 describe("hands-free app tools", () => {
   beforeEach(() => useStore.getState().resetWorkspace());
 
-  it("reads the category screen and chooses a spoken category", async () => {
-    expect(getAccessibleSnapshot().screen).toBe("category chooser");
+  it("opens with the open product search and can still start a guided example", async () => {
+    const snapshot = getAccessibleSnapshot();
+    expect(snapshot.screen).toBe("open product search");
+    expect(snapshot).toMatchObject({ open_request: true });
     await executeVoiceTool("choose_domain", { domain: "gadgets" });
     expect(useStore.getState().domain).toBe("gadgets");
     expect(getAccessibleSnapshot().screen).toBe("decisions");
@@ -52,5 +76,20 @@ describe("hands-free app tools", () => {
     useStore.setState({ stage: "results", liveProducts: [liveProduct] });
     await executeVoiceTool("propose_add_to_cart", { product_id: liveProduct.id, quantity: 1, reason: "Matches" });
     await expect(executeVoiceTool("confirm_shopping_plan", { confirmation: "confirm shopping plan" })).rejects.toThrow("still need a human decision");
+  });
+
+  it("answers only the currently visible open-discovery question", async () => {
+    const operationId = useStore.getState().startGeneralDiscovery("text", { text: "wireless headphones" });
+    useStore.getState().completeInterpretation(operationId, { reference: discoveryReference, brief: discoveryBrief, questions: [countryQuestion] });
+    await expect(executeVoiceTool("answer_clarifying_question", { question_id: "delivery_country", values: ["GB"] })).rejects.toThrow("does not match");
+    await executeVoiceTool("answer_clarifying_question", { question_id: "delivery_country", values: ["NG"] });
+    expect(useStore.getState().answers.delivery_country).toEqual(["NG"]);
+  });
+
+  it("requires the exact spoken phrase before confirming an open brief", async () => {
+    const operationId = useStore.getState().startGeneralDiscovery("text", { text: "wireless headphones" });
+    useStore.getState().completeInterpretation(operationId, { reference: discoveryReference, brief: { ...discoveryBrief, deliveryCountry: "NG" }, questions: [] });
+    await expect(executeVoiceTool("confirm_shopping_brief", { confirmation: "yes" })).rejects.toThrow("exact spoken confirmation");
+    expect(useStore.getState().briefConfirmed).toBe(false);
   });
 });

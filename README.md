@@ -6,27 +6,25 @@
 
 **An AI agent that shops for you**
 
-*You answer six plain questions, by tapping or by speaking. A real agent searches live Shopify stores. Every price on your screen came from a merchant, not a model. And nothing enters your cart until you say yes.*
+*Describe any product, show a reference photo, or paste a product link. A real agent turns it into an editable brief and searches live Shopify stores. Every displayed product fact comes from merchant data, and nothing enters your cart until you say yes.*
 
 [**🛒 Live app**](https://co-cart-live.netlify.app) ·
 [Architecture](#how-it-actually-works) ·
-[The 14 Co-Cart tools](#the-14-co-cart-tools-the-page-hands-to-an-agent) ·
+[The 17 Co-Cart tools](#the-17-co-cart-tools-the-page-hands-to-an-agent) ·
 [Engineering notes](#engineering-notes--things-i-got-wrong-first)
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-7C5CFF.svg)
-![WebMCP](https://img.shields.io/badge/WebMCP-14%20page%20tools-4C1D95.svg)
+![WebMCP](https://img.shields.io/badge/WebMCP-17%20page%20tools-4C1D95.svg)
 ![OpenAI](https://img.shields.io/badge/OpenAI-Responses%20%2B%20Realtime-10A37F.svg)
 ![Shopify](https://img.shields.io/badge/Shopify-Global%20Catalog%20MCP-95BF47.svg)
-![Tests](https://img.shields.io/badge/tests-42%20passing-2E9C6E.svg)
+![Tests](https://img.shields.io/badge/tests-79%20passing-2E9C6E.svg)
 ![Netlify](https://img.shields.io/badge/Netlify-deployed-00C7B7.svg)
 
 *Built for the WebMCP Challenge*
 
 </div>
 
----
-**YOUTUBE DEMO**:
----
+> **Update — 2026-09-04:** Co-Cart now opens with **open product discovery**: describe any product in plain language, upload a reference photo, or paste a product link. A server-side OpenAI step interprets the reference, asks only the missing questions, and shows an editable brief before the verified live Shopify search runs. Meals/Gadgets/Clothing remain as compact guided examples. Three new WebMCP tools (`set-shopping-request`, `answer-clarifying-question`, `confirm-shopping-brief`) expose the flow to agents (17 page tools total, 72 tests). See [CO-CART_DISCOVERY_HANDOFF.md](./CO-CART_DISCOVERY_HANDOFF.md).
 
 ## The moment that started this
 
@@ -52,7 +50,7 @@ The second thing: an agent that can shop should never be able to *buy*. Every ca
 
 Co-Cart is built for a near future where a shopper's agent is not merely reading a webpage, it is **using the webpage on the shopper's behalf**.
 
-A normal shopping site gives an AI a wall of pixels, ambiguous buttons, and product copy it has to guess how to interpret. **WebMCP does not prescribe a fixed catalogue of tools**; it gives a website the browser API (`navigator.modelContext`) to declare its own capabilities. Co-Cart uses that API to define 14 shopping-specific tools: an agent can read the current shopping state, answer the same decision cards a person sees, start a verified live search, inspect the resulting shortlist, and propose a cart change.
+A normal shopping site gives an AI a wall of pixels, ambiguous buttons, and product copy it has to guess how to interpret. **WebMCP does not prescribe a fixed catalogue of tools**; it gives a website the browser API (`navigator.modelContext`) to declare its own capabilities. Co-Cart uses that API to define 17 shopping-specific tools: an agent can set an open request, answer clarification, confirm the visible brief, operate the guided examples, start a verified live search, inspect the resulting shortlist, and propose a cart change.
 
 The same action layer also powers voice mode. For a blind or low-vision shopper, someone with limited motor control, or anyone who cannot use a keyboard in the moment, the agent can say what screen they are on, read out the choices, accept a spoken answer, explain the live shortlist, and describe the next safe action. The person does not need to find a card, read a tiny price, or type a search query before the agent can help.
 
@@ -80,7 +78,7 @@ That is the WebMCP experiment here: not “AI added to a shopping page,” but a
 - [What makes it different](#what-makes-it-different)
 - [Why WebMCP is the point, not a checkbox](#why-webmcp-is-the-point-not-a-checkbox)
 - [How it actually works](#how-it-actually-works)
-- [The 14 Co-Cart tools the page hands to an agent](#the-14-co-cart-tools-the-page-hands-to-an-agent)
+- [The 17 Co-Cart tools the page hands to an agent](#the-17-co-cart-tools-the-page-hands-to-an-agent)
 - [Using Co-Cart from a WebMCP browser](#using-co-cart-from-a-webmcp-browser)
 - [Using Co-Cart headlessly over MCP](#using-co-cart-headlessly-over-mcp)
 - [Shopping with your voice](#shopping-with-your-voice)
@@ -97,9 +95,9 @@ That is the WebMCP experiment here: not “AI added to a shopping page,” but a
 
 ## What it feels like to use
 
-Open [co-cart-live.netlify.app](https://co-cart-live.netlify.app). Pick **Meals**, **Gadgets**, or **Clothing**.
+Open [co-cart-live.netlify.app](https://co-cart-live.netlify.app). Describe any product in plain language, upload a reference photo, or paste a public product link. Co-Cart uses OpenAI to interpret the reference, asks only the missing questions, and shows an editable brief before any catalog search begins.
 
-You get six decision cards. Not a search box, cards, in plain English, because "what are you actually trying to solve" is a better question than "what keywords do you know":
+Confirm the brief and watch the agent connect to Shopify Global Catalog, verify the finalists, and present a small explained shortlist. The compact **Meals**, **Gadgets**, and **Clothing** cards remain available as fast guided examples with six decision cards:
 
 ```text
 What would make eating easier for you right now?     → Quick dinner
@@ -128,7 +126,7 @@ Checkout doesn't charge you. It opens the actual merchant's Shopify checkout, be
 
 **Agents propose; humans dispose.** Confirmed cart lines and agent proposals are separate arrays in the store, and the only paths from one to the other run through a human click. Two tests exist purely to prove a rejected proposal leaves the confirmed cart byte-identical.
 
-**WebMCP is a real action layer, not an AI label.** A WebMCP-enabled browser discovers 14 typed page tools at load. An agent can move through the same six decisions, trigger the real Shopify search, compare verified products, and prepare a cart proposal — all through the shared state the person is looking at. It can help, but it cannot silently take over.
+**WebMCP is a real action layer, not an AI label.** A WebMCP-enabled browser discovers 17 typed page tools at load. An agent can operate the open request and clarification flow or the guided examples, trigger the real Shopify search, compare verified products, and prepare a cart proposal — all through the shared state the person is looking at. It can help, but it cannot silently take over.
 
 **Multiple currencies never get silently added together.** Shopify's global catalog will happily return a $13.99 item and a ₦21,900 item in the same shortlist. Most carts would mash those into one meaningless number. Co-Cart keeps per-currency subtotals separate and displays them separately, because "$35.99 + ₦21,900 = 21,935.99" is a lie with a decimal point in it.
 
@@ -142,12 +140,13 @@ Checkout doesn't charge you. It opens the actual merchant's Shopify checkout, be
 
 ```text
  ┌──────────────────────────────────────────────────────────┐
- │  React decision UI          WebMCP page tools (14)       │
+ │  React decision UI          WebMCP page tools (17)       │
  │  (what a human sees)        (what an agent sees)         │
  └────────────────────────┬─────────────────────────────────┘
                           │  same Zustand store, one truth
                           ▼
-              POST /api/search   (Netlify Function)
+      POST /api/discovery + POST /api/search
+                 (Netlify Functions)
                           │  server-side only, key never shipped
                           ▼
               OpenAI Responses API agent
@@ -180,18 +179,21 @@ The load-bearing idea is the **narrow waist in the middle**. OpenAI never talks 
 | Agent | **OpenAI Responses API** (`gpt-5.6`) | Tool-calling loop with schema-enforced output |
 | Voice | **OpenAI Realtime** (`gpt-realtime-2.1`) over WebRTC | Ephemeral client secrets — the server key never touches the browser |
 | Catalog | **Shopify Global Catalog MCP** | Real listings, real merchants, real checkout links |
-| Page tools | **WebMCP** (`navigator.modelContext`) | 14 tools registered silently on load |
-| Hosting | **Netlify** + Netlify Functions | Static frontend and both API endpoints on one free plan |
+| Page tools | **WebMCP** (`navigator.modelContext`) | 17 tools registered silently on load |
+| Hosting | **Netlify** + Netlify Functions | Static frontend and discovery, search, voice, and headless MCP endpoints on one free plan |
 
 ---
 
-## The 14 Co-Cart tools the page hands to an agent
+## The 17 Co-Cart tools the page hands to an agent
 
-These are **Co-Cart's custom WebMCP tools**, not a list supplied by WebMCP. WebMCP is the browser mechanism that lets the site register them; Co-Cart chooses the 14 actions that make sense for its shopping flow. Every one maps one-to-one onto something a human can see and do. That constraint is the design: an agent should never have a capability that isn't visible in the UI.
+These are **Co-Cart's custom WebMCP tools**, not a list supplied by WebMCP. WebMCP is the browser mechanism that lets the site register them; Co-Cart chooses the 17 actions that make sense for its shopping flow. Every one maps one-to-one onto something a human can see and do. That constraint is the design: an agent should never have a capability that isn't visible in the UI.
 
 | Tool | What it does |
 | :--- | :--- |
 | `get-decision-state` | Read the whole visible workflow — category, stage, questions, answers, results, cart, pending approvals |
+| `set-shopping-request` | Interpret a plain-language request or safe public product URL |
+| `answer-clarifying-question` | Answer one currently visible generated clarification |
+| `confirm-shopping-brief` | Confirm the reviewed normalized brief before search |
 | `select-domain` | Pick a shopping category and open its decision cards |
 | `set-decision-answer` | Answer one card (options, or free text for the delivery address) |
 | `set-decision-answers` | Answer several cards atomically in one round trip |
@@ -218,25 +220,26 @@ Source: [`src/webmcp/tools.ts`](src/webmcp/tools.ts)
 
 ## Using Co-Cart from a WebMCP browser
 
-Co-Cart registers its 14 custom tools on `navigator.modelContext` at load. Nothing to click, nothing to enable — the agent host discovers them as part of the page. WebMCP itself does not come with built-in tools; it gives this website a standard way to expose its own safe, typed actions to an agent.
+Co-Cart registers its 17 custom tools on `navigator.modelContext` at load. Nothing to click, nothing to enable — the agent host discovers them as part of the page. WebMCP itself does not come with built-in tools; it gives this website a standard way to expose its own safe, typed actions to an agent.
 
 Open [co-cart-live.netlify.app](https://co-cart-live.netlify.app) in a WebMCP-enabled browser or agent host and the tools are discoverable immediately. The host can give an agent a request such as “find crowd-favourite wireless headphones under $50,” and the agent can operate the flow through explicit tools rather than unreliable visual guessing. From an agent (or the console, host API depending):
 
 ```js
-await navigator.modelContext.callTool("select-domain", { domain: "gadgets" });
-await navigator.modelContext.callTool("set-decision-answer", {
-  questionId: "gadget_type", values: ["wireless headphones"]
+await navigator.modelContext.callTool("set-shopping-request", {
+  request: "quiet wireless headphones under $80 delivered to Nigeria"
 });
+// Answer any returned clarification with answer-clarifying-question.
+await navigator.modelContext.callTool("confirm-shopping-brief", {});
 await navigator.modelContext.callTool("start-live-search", {});
 await navigator.modelContext.callTool("get-live-results", {});
 await navigator.modelContext.callTool("add-to-cart", { productId: "…" }); // proposal only
 ```
 
-**The full-power sequence:** `get-decision-state` → `select-domain` → `set-decision-answer` ×6 → `start-live-search` → `get-live-results` → `highlight-products` → `add-to-cart`. At each step the tool returns structured state, and the page shows the same state to the person. Then stop: `add-to-cart` creates a proposal, not a purchase, because the last decision belongs to a human.
+**The open-search sequence:** `get-decision-state` → `set-shopping-request` → `answer-clarifying-question` as needed → `confirm-shopping-brief` → `start-live-search` → `get-live-results` → `highlight-products` → `add-to-cart`. The guided-example sequence remains `select-domain` → `set-decision-answer` or `set-decision-answers` → `start-live-search`. At each step the page shows the same state to the person. Then stop: `add-to-cart` creates a proposal, not a purchase, because the last decision belongs to a human.
 
 The new `set-decision-answers` tool lets an agent submit a complete shopping brief in one validated call rather than making six serial calls. The update is atomic: if one answer is invalid, none of the visible decisions change.
 
-This is why the 14 tools matter to the hackathon: they turn a shopping interface into an **agent-ready, observable, constrained action surface**. They are intentionally silent in the product UI, but they are the core interface for a browser agent.
+This is why the 17 tools matter to the hackathon: they turn a shopping interface into an **agent-ready, observable, constrained action surface**. They are intentionally silent in the product UI, but they are the core interface for a browser agent.
 
 ---
 
@@ -356,7 +359,7 @@ Beyond those, the server enforces limits that aren't configurable on purpose: **
 
 ## Deploy
 
-Live at **https://co-cart-live.netlify.app** on Netlify's free plan — the static frontend and both API endpoints (`/api/search`, `/api/realtime-session`) run as Netlify Functions, mapped by redirects in [`netlify.toml`](netlify.toml).
+Live at **https://co-cart-live.netlify.app** on Netlify's free plan — the static frontend and four API endpoints (`/api/discovery`, `/api/search`, `/api/realtime-session`, `/api/mcp`) run as Netlify Functions, mapped by redirects in [`netlify.toml`](netlify.toml).
 
 ```bash
 npm i -g netlify-cli
@@ -426,7 +429,7 @@ That last store test — *"treats missing allergen metadata as unknown rather th
 ```text
 co-cart/
 ├─ src/
-│  ├─ webmcp/tools.ts        ← the 14 agent tools, audited + guarded
+│  ├─ webmcp/tools.ts        ← the 17 agent tools, audited + guarded
 │  ├─ voice/                 ← Realtime agent, spoken tool surface, events
 │  ├─ agent/
 │  │  ├─ liveSearch.ts       ← NDJSON stream client + warmed-cache replay

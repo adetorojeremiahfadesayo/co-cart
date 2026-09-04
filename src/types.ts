@@ -1,6 +1,57 @@
-export type DecisionDomain = "meals" | "gadgets" | "clothing";
+export type DecisionDomain = "meals" | "gadgets" | "clothing" | "general";
 
-export type AppStage = "decisions" | "searching" | "results" | "error";
+export type AppStage =
+  | "entry"
+  | "interpreting"
+  | "clarifying"
+  | "brief-review"
+  | "decisions"
+  | "searching"
+  | "results"
+  | "error";
+
+export type DiscoveryMode = "text" | "image" | "url" | "example";
+
+export interface DiscoveryReference {
+  mode: DiscoveryMode;
+  originalText?: string;
+  sourceUrl?: string;
+  interpretedProduct: string;
+  visibleAttributes: string[];
+  uncertaintyNotes: string[];
+}
+
+export interface ShoppingBrief {
+  productType: string;
+  useCase?: string;
+  priorities: string[];
+  exclusions: string[];
+  decisionStyle?: string;
+  storePreference?: string;
+  budget?: { amount: number; currency: string };
+  deliveryCountry?: string;
+  reference?: DiscoveryReference;
+}
+
+export type ClarifyingField =
+  | "productType"
+  | "useCase"
+  | "priorities"
+  | "exclusions"
+  | "decisionStyle"
+  | "storePreference"
+  | "budget"
+  | "deliveryCountry";
+
+export interface ClarifyingQuestion {
+  id: string;
+  prompt: string;
+  detail?: string;
+  kind: "single" | "multiple" | "text" | "money";
+  field: ClarifyingField;
+  options?: Array<{ value: string; label: string }>;
+  required: boolean;
+}
 
 export type DecisionAnswers = Record<string, string[]>;
 

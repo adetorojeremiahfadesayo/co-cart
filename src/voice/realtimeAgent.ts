@@ -19,6 +19,7 @@ const confirmationPhrases: Record<string, string> = {
   reject_all_proposals: "reject all changes",
   confirm_shopping_plan: "confirm shopping plan",
   go_back_to_decisions: "go back and clear results",
+  confirm_shopping_brief: "confirm brief and search",
 };
 
 const normalizeSpeech = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ");

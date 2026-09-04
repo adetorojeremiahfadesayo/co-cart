@@ -8,6 +8,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/discovery"
+  to = "/.netlify/functions/discovery"
+  status = 200
+
+[[redirects]]
   from = "/api/realtime-session"
   to = "/.netlify/functions/realtime-session"
   status = 200

@@ -1,4 +1,4 @@
-import type { DecisionAnswers, DecisionDomain, LiveSearchResult, Product } from "../types";
+import type { DecisionAnswers, DecisionDomain, LiveSearchResult, Product, ShoppingBrief } from "../types";
 import { matchDemoCache } from "./demoCache";
 
 type WireEvent =
@@ -54,29 +54,7 @@ export function getClientSessionId() {
   }
 }
 
-export async function searchLiveCatalog(
-  domain: DecisionDomain,
-  answers: DecisionAnswers,
-  callbacks: LiveSearchCallbacks,
-  signal?: AbortSignal,
-): Promise<LiveSearchResult> {
-  const warmedFile = matchDemoCache(domain, answers);
-  if (warmedFile) {
-    try {
-      return await warmedDemoResult(warmedFile, callbacks, signal);
-    } catch (error) {
-      if (signal?.aborted) throw error;
-      // Snapshot missing or malformed — fall through to the real live search.
-    }
-  }
-
-  const response = await fetch("/api/search", {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/x-ndjson", "x-cocart-session": getClientSessionId() },
-    body: JSON.stringify({ domain, answers }),
-    signal,
-  });
-
+async function readSearchStream(response: Response, callbacks: LiveSearchCallbacks): Promise<LiveSearchResult> {
   if (!response.ok || !response.body) {
     const payload = await response.text();
     throw new Error(payload || `Live search failed with HTTP ${response.status}.`);
@@ -104,4 +82,45 @@ export async function searchLiveCatalog(
 
   if (!result) throw new Error("The agent finished without returning verified Shopify products.");
   return { ...result, source: "live" };
+}
+
+export async function searchLiveCatalog(
+  domain: DecisionDomain,
+  answers: DecisionAnswers,
+  callbacks: LiveSearchCallbacks,
+  signal?: AbortSignal,
+): Promise<LiveSearchResult> {
+  const warmedFile = matchDemoCache(domain, answers);
+  if (warmedFile) {
+    try {
+      return await warmedDemoResult(warmedFile, callbacks, signal);
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      // Snapshot missing or malformed — fall through to the real live search.
+    }
+  }
+
+  const response = await fetch("/api/search", {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/x-ndjson", "x-cocart-session": getClientSessionId() },
+    body: JSON.stringify({ domain, answers }),
+    signal,
+  });
+  return readSearchStream(response, callbacks);
+}
+
+// Open-discovery briefs never consult the demo snapshot cache: a general
+// request always runs the real OpenAI → Shopify workflow or fails clearly.
+export async function searchGeneralCatalog(
+  brief: ShoppingBrief,
+  callbacks: LiveSearchCallbacks,
+  signal?: AbortSignal,
+): Promise<LiveSearchResult> {
+  const response = await fetch("/api/search", {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/x-ndjson", "x-cocart-session": getClientSessionId() },
+    body: JSON.stringify({ domain: "general", brief }),
+    signal,
+  });
+  return readSearchStream(response, callbacks);
 }

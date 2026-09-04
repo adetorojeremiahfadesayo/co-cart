@@ -1,9 +1,10 @@
 import { validateDecisionAnswers } from "../src/decision/questions.ts";
 import { countryFromAddress } from "../src/decision/country.ts";
+import { shoppingBriefToText, validateShoppingBrief } from "../src/decision/shoppingBrief.ts";
 import { executeShopifyAgentTool, OPENAI_SHOPIFY_FUNCTION_TOOLS, UCP_AGENT_PROFILE } from "./shopifyMcp.ts";
 import { fetchWithTransientRetry } from "./fetchWithRetry.ts";
 
-type DecisionDomain = "meals" | "gadgets" | "clothing";
+type DecisionDomain = "meals" | "gadgets" | "clothing" | "general";
 type Answers = Record<string, string[]>;
 type SearchStatus = "active" | "done" | "error";
 type JsonObject = Record<string, unknown>;
@@ -224,7 +225,7 @@ function parseOutput(text: string, domain: DecisionDomain, provenance: Map<strin
       currency: source.currency,
       merchant: source.merchant,
       description: source.description,
-      emoji: domain === "meals" ? "M" : domain === "gadgets" ? "G" : "C",
+      emoji: domain === "meals" ? "M" : domain === "gadgets" ? "G" : domain === "clothing" ? "C" : "✦",
       tags: Array.isArray(item?.tags) ? item.tags.filter((tag): tag is string => typeof tag === "string").slice(0, 8) : [],
       demoOnly: false,
       imageUrl: source.imageUrl,
@@ -279,9 +280,18 @@ export async function handleLiveSearch(request: Request): Promise<Response> {
     return new Response("Invalid JSON", { status: 400 });
   }
   const domain = payload.domain;
-  if (domain !== "meals" && domain !== "gadgets" && domain !== "clothing") return new Response("Invalid live-search request", { status: 400 });
-  const answers = validateDecisionAnswers(domain, payload.answers) as Answers | null;
-  if (!answers) return new Response("Invalid live-search request", { status: 400 });
+  if (domain !== "meals" && domain !== "gadgets" && domain !== "clothing" && domain !== "general") return new Response("Invalid live-search request", { status: 400 });
+  let answers: Answers | null = null;
+  let generalBrief: ReturnType<typeof validateShoppingBrief> = null;
+  if (domain === "general") {
+    // Open-discovery requests carry a validated shopping brief and always run
+    // the live workflow; they can never match a warmed demo snapshot.
+    generalBrief = validateShoppingBrief(payload.brief);
+    if (!generalBrief) return new Response("Invalid live-search request", { status: 400 });
+  } else {
+    answers = validateDecisionAnswers(domain, payload.answers) as Answers | null;
+    if (!answers) return new Response("Invalid live-search request", { status: 400 });
+  }
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return new Response("Live agent unavailable: OPENAI_API_KEY is not configured on the server. No demo fallback was used.", { status: 503 });
@@ -293,11 +303,13 @@ export async function handleLiveSearch(request: Request): Promise<Response> {
   activeSearches += 1;
 
   const model = process.env.OPENAI_MODEL || "gpt-5.6";
-  const deliveryAddress = answers.delivery_address?.[0];
-  const derivedCountry = deliveryAddress ? countryFromAddress(deliveryAddress) : null;
-  const brief = Object.entries(answers)
-    .map(([key, values]) => `${key}: ${values.join(", ")}`)
-    .join("\n") + (derivedCountry ? `\nderived_country: ${derivedCountry}` : "");
+  const deliveryAddress = answers?.delivery_address?.[0];
+  const derivedCountry = generalBrief?.deliveryCountry ?? (deliveryAddress ? countryFromAddress(deliveryAddress) : null);
+  const brief = generalBrief
+    ? shoppingBriefToText(generalBrief)
+    : Object.entries(answers ?? {})
+        .map(([key, values]) => `${key}: ${values.join(", ")}`)
+        .join("\n") + (derivedCountry ? `\nderived_country: ${derivedCountry}` : "");
   const encoder = new TextEncoder();
   const abortController = new AbortController();
   const abortFromRequest = () => abortController.abort(request.signal.reason);
@@ -315,7 +327,10 @@ export async function handleLiveSearch(request: Request): Promise<Response> {
       };
       let outputText = "";
       const successfulShopifyItems: JsonObject[] = [];
-      let inputItems: unknown[] = [{ role: "user", content: [{ type: "input_text", text: `Find live Shopify catalog products for the ${domain} domain. Buyer answers:\n${brief}` }] }];
+      const openingLine = domain === "general"
+        ? `Find live Shopify catalog products matching this confirmed open shopping brief.\n${brief}`
+        : `Find live Shopify catalog products for the ${domain} domain. Buyer answers:\n${brief}`;
+      let inputItems: unknown[] = [{ role: "user", content: [{ type: "input_text", text: openingLine }] }];
       let toolCallCount = 0;
       let firstRound = true;
       let finalSelectionRetries = 0;
@@ -345,7 +360,7 @@ export async function handleLiveSearch(request: Request): Promise<Response> {
                   "For every finalist, return sourceId as the exact gid://shopify/ProductVariant/... ID from a Shopify function output.",
                   "Do not repeat merchant, price, URL, image, or title facts in the structured selection; the server reconstructs those from Shopify output.",
                   "Weigh the buyer's decision_style (crowd favourite, best value, hidden gem, industry standard) and store_preference (no preference, big-name stores, smaller independent stores) when choosing finalists and assigning each classification.",
-                  "The buyer's delivery address is free text; the server adds a derived_country line (NG, US, GB, or CA). Always pass that derived_country value as address_country to every shopify_* function call.",
+                  "The confirmed brief always includes derived_country (NG, US, GB, or CA). Pass that exact value as address_country to every shopify_* function call; never invent or substitute a destination.",
                   `Classify every finalist as exactly one of: ${RECOMMENDATION_CLASSES.join(", ")}.`,
                   "Use Top-rated choice only when the Shopify output contains explicit rating or review evidence. Never invent ratings, review counts, merchant quality, or brand reputation.",
                   "Treat each classification as a concise editorial role supported by the live evidence and the buyer's requested recommendation style.",

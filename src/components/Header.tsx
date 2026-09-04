@@ -11,6 +11,7 @@ export default function Header() {
   const cart = useStore((s) => s.cart);
   const proposals = useStore((s) => s.proposals);
   const brief = useStore((s) => s.brief);
+  const shoppingBrief = useStore((s) => s.shoppingBrief);
   const [confirmChange, setConfirmChange] = useState(false);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -21,7 +22,7 @@ export default function Header() {
   const itemCount = cart.reduce((n, item) => n + item.qty, 0);
   const pendingCount = proposals.length;
   const config = domain ? DOMAIN_CONFIG[domain] : null;
-  const hasWork = Boolean(brief || cart.length || proposals.length);
+  const hasWork = Boolean(brief || shoppingBrief || cart.length || proposals.length);
 
   const requestCategoryChange = () => {
     if (hasWork) setConfirmChange(true);

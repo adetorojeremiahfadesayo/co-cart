@@ -183,6 +183,9 @@ export const DECISION_QUESTIONS: Record<DecisionDomain, DecisionQuestion[]> = {
     },
     sharedDelivery,
   ],
+  // Open discovery generates its own clarifying questions per request; there
+  // is no fixed card deck for the general domain.
+  general: [],
 };
 
 export function answersToPrompt(domain: DecisionDomain, answers: Record<string, string[]>) {

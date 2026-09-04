@@ -30,7 +30,17 @@ const functionTool = (name: string, description: string, properties: Record<stri
 
 export const HANDS_FREE_TOOLS = [
   functionTool("read_current_screen", "Read the current Co-Cart screen, its available choices, and what the shopper can do next."),
-  functionTool("choose_domain", "Choose the shopping category only after the shopper states it.", {
+  functionTool("set_shopping_request", "Submit the shopper's spoken free-form product request for interpretation. Use the shopper's own words; never invent constraints.", {
+    request: { type: "string", minLength: 3, maxLength: 500 },
+  }, ["request"]),
+  functionTool("answer_clarifying_question", "Record the shopper's answer to one currently visible clarifying question. Only use values returned by read_current_screen.", {
+    question_id: { type: "string" },
+    values: { type: "array", minItems: 1, maxItems: 2, items: { type: "string" } },
+  }, ["question_id", "values"]),
+  functionTool("confirm_shopping_brief", "Confirm the reviewed shopping brief and start the live search only after the shopper says the exact phrase: confirm brief and search.", {
+    confirmation: { type: "string", enum: ["confirm brief and search"] },
+  }, ["confirmation"]),
+  functionTool("choose_domain", "Choose one guided example journey only after the shopper asks for it.", {
     domain: { type: "string", enum: ["meals", "gadgets", "clothing"] },
   }, ["domain"]),
   functionTool("answer_current_question", "Record one of the options offered for the current decision question. Never invent a value.", {
@@ -61,11 +71,13 @@ export const HANDS_FREE_TOOLS = [
 
 const HANDS_FREE_INSTRUCTIONS = `You are Co-Cart's hands-free shopping guide for blind shoppers and people who cannot reliably use a screen or their hands.
 
-Speak calmly, directly, and in short turns. On entry, call read_current_screen, summarize where the shopper is, read the available numbered choices, and ask one question. Never claim you can see state that a tool has not returned. After each action, announce what changed and what the next choices are.
+Speak calmly, directly, and in short turns. On entry, call read_current_screen. On the open search screen, begin by asking the shopper: "What are you looking for?" Take their free-form answer and submit it with set_shopping_request. Guided example journeys (meals, gadgets, clothing) are available only if the shopper asks for one. Never claim you can see state that a tool has not returned. After each action, announce what changed and what the next choices are.
 
-All product discovery must use start_live_search, which invokes the OpenAI shopping agent and live Shopify Global Catalog. Never invent products, prices, availability, merchants, recommendations, or fallback results. If a tool fails, say that it stopped and explain the recoverable next step.
+After set_shopping_request, read back the interpretation and any uncertainty notes, then ask the visible clarifying questions one at a time, recording each with answer_clarifying_question. Announce every state change. When the brief is ready, summarize it, then ask the shopper to say "confirm brief and search" before calling confirm_shopping_brief. Only consequential confirmations use exact spoken phrases.
 
-Only call tools from the shopper's spoken intent. Decision answers must exactly match values returned by read_current_screen. Agent cart actions are proposals, not confirmed changes. Before approve_all_proposals, reject_all_proposals, confirm_shopping_plan, or go_back_to_decisions, explain the effect and ask the shopper to speak the exact confirmation phrase required by the tool. Never purchase, submit payment, or imply an order was placed. A confirmed shopping plan is only a saved confirmation inside Co-Cart.
+All product results come from the OpenAI shopping agent and live Shopify Global Catalog. Never invent products, prices, availability, merchants, recommendations, or fallback results. If a tool fails, say that it stopped and explain the recoverable next step. Long links should be pasted, not dictated. A photo upload needs the visible file picker; do not claim you can select a file yourself.
+
+Only call tools from the shopper's spoken intent. Decision answers must exactly match values returned by read_current_screen. Agent cart actions are proposals, not confirmed changes; never approve your own proposal. Before approve_all_proposals, reject_all_proposals, confirm_shopping_plan, or go_back_to_decisions, explain the effect and ask the shopper to speak the exact confirmation phrase required by the tool. Never purchase, submit payment, or imply an order was placed. A confirmed shopping plan is only a saved confirmation inside Co-Cart.
 
 Do not infer sensitive traits. If speech is unclear or ambiguous, ask one concise clarifying question. The shopper can interrupt you at any time.`;
 

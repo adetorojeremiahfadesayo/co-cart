@@ -36,6 +36,9 @@ export const catalogs: Record<DecisionDomain, Product[]> = {
   meals,
   gadgets: normalize("gadgets", gadgetsData as Omit<Product, "domain" | "demoOnly">[]),
   clothing: normalize("clothing", clothingData as Omit<Product, "domain" | "demoOnly">[]),
+  // The open discovery flow has no seeded catalog: every result must come
+  // from the live OpenAI → Shopify search.
+  general: [],
 };
 
 export const demoCatalogAdapter: CatalogAdapter = {
@@ -107,6 +110,22 @@ export const DOMAIN_CONFIG: Record<DecisionDomain, DomainConfig> = {
       budget: 150,
       dealBreakers: ["Size M unavailable"],
       deliveryDeadline: "Within 5 days",
+      targetCount: 1,
+    },
+  },
+  general: {
+    id: "general",
+    label: "Open product search",
+    shortLabel: "Open search",
+    symbol: "✦",
+    outcome: "Describe any product. The agent interprets the request, asks only what is missing, and searches the live Shopify catalog.",
+    demoRequest: "",
+    categories: ["all"],
+    preset: {
+      request: "",
+      required: [],
+      preferred: [],
+      dealBreakers: [],
       targetCount: 1,
     },
   },

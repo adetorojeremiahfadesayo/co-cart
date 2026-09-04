@@ -2,6 +2,7 @@ import { DOMAIN_CONFIG } from "../data/catalog";
 import { useStore } from "../store/useStore";
 import { cancelActiveSearch } from "../agent/searchCoordinator";
 import { startCurrentLiveSearch } from "../agent/startCurrentSearch";
+import { startGeneralLiveSearch } from "../agent/startDiscovery";
 
 export default function AgentSearch() {
   const domain = useStore((state) => state.domain);
@@ -11,6 +12,7 @@ export default function AgentSearch() {
   const continueShopping = useStore((state) => state.continueShopping);
 
   if (!domain) return null;
+  const isGeneral = domain === "general";
   const failed = stage === "error";
   const backToDecisions = () => {
     cancelActiveSearch();
@@ -18,7 +20,8 @@ export default function AgentSearch() {
   };
   const retry = async () => {
     try {
-      await startCurrentLiveSearch();
+      // General searches resume from the still-confirmed brief.
+      await (isGeneral ? startGeneralLiveSearch() : startCurrentLiveSearch());
     } catch {
       // The refreshed search state presents the actionable error.
     }
@@ -31,7 +34,7 @@ export default function AgentSearch() {
         {!failed && <><i /><i /><i /></>}
       </div>
       <p className="quiet-kicker">OpenAI × Shopify Global Catalog</p>
-      <h1>{failed ? "The live search stopped." : `Searching for your ${DOMAIN_CONFIG[domain].shortLabel.toLowerCase()}…`}</h1>
+      <h1>{failed ? "The live search stopped." : isGeneral ? "Searching live stores for your brief…" : `Searching for your ${DOMAIN_CONFIG[domain].shortLabel.toLowerCase()}…`}</h1>
       <p className="agent-stage__lead">
         {failed ? "Co-Cart did not substitute demo products." : "The agent is checking current listings, merchants, prices, and tradeoffs."}
       </p>
@@ -50,7 +53,7 @@ export default function AgentSearch() {
           <p>{error}</p>
           <div className="agent-error__actions">
             <button type="button" className="quiet-button" onClick={retry}>Retry search</button>
-            <button type="button" className="quiet-button" onClick={backToDecisions}>Adjust decisions</button>
+            <button type="button" className="quiet-button" onClick={backToDecisions}>{isGeneral ? "Refine brief" : "Adjust decisions"}</button>
           </div>
         </div>
       )}

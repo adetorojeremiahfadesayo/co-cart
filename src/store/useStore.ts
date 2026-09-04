@@ -4,18 +4,23 @@ import type {
   ActivityEntry,
   CartProposal,
   CartTotals,
+  ClarifyingQuestion,
   ConfirmedPlan,
   ConfirmedCartItem,
   ConstraintCheck,
   DecisionAnswers,
   DecisionBrief,
   DecisionDomain,
+  DiscoveryMode,
+  DiscoveryReference,
   GridFilters,
   AppStage,
   SearchEvent,
   Preferences,
   Product,
+  ShoppingBrief,
 } from "../types";
+import { applyClarifyingAnswers } from "../decision/shoppingBrief";
 import { formatCurrencyTotals } from "../utils/money";
 import { proposeAdd, proposeRemove, proposeSwap, resolveProposal } from "./proposalState";
 
@@ -138,6 +143,22 @@ export interface StoreState {
   highlight: { ids: string[]; note?: string; at: number } | null;
   checkedOut: ConfirmedPlan | null;
   cartOpen: boolean;
+  discoveryMode: DiscoveryMode | null;
+  discoveryReference: DiscoveryReference | null;
+  shoppingBrief: ShoppingBrief | null;
+  clarifyingQuestions: ClarifyingQuestion[];
+  briefConfirmed: boolean;
+  interpretationId: string | null;
+  interpretationError: string | null;
+  pendingRequest: { mode: "text" | "image" | "url"; text?: string; url?: string } | null;
+  startGeneralDiscovery: (mode: "text" | "image" | "url", request: { text?: string; url?: string }) => string;
+  completeInterpretation: (operationId: string, payload: { reference: DiscoveryReference; brief: ShoppingBrief; questions: ClarifyingQuestion[] }) => boolean;
+  failInterpretation: (operationId: string, message: string) => boolean;
+  setClarifyingAnswer: (questionId: string, values: string[], source?: "user" | "agent") => void;
+  proceedToBriefReview: () => void;
+  updateShoppingBrief: (patch: Partial<ShoppingBrief>) => void;
+  confirmShoppingBrief: () => boolean;
+  returnToEntry: () => void;
   startDomain: (domain: DecisionDomain, usePreset?: boolean) => void;
   setDecisionAnswer: (questionId: string, values: string[], source?: "user" | "agent") => void;
   agentAnswerFlash: { questionId: string; at: number } | null;
@@ -169,9 +190,22 @@ export interface StoreState {
   cartTotals: () => CartTotals;
 }
 
+const blankDiscovery = () => ({
+  discoveryMode: null as DiscoveryMode | null,
+  discoveryReference: null as DiscoveryReference | null,
+  shoppingBrief: null as ShoppingBrief | null,
+  clarifyingQuestions: [] as ClarifyingQuestion[],
+  briefConfirmed: false,
+  interpretationId: null as string | null,
+  interpretationError: null as string | null,
+  pendingRequest: null as { mode: "text" | "image" | "url"; text?: string; url?: string } | null,
+});
+
+let interpretationSeq = 0;
+
 export const useStore = create<StoreState>((set, get) => ({
   domain: null,
-  stage: "decisions",
+  stage: "entry",
   answers: {},
   liveProducts: [],
   searchEvents: [],
@@ -188,11 +222,103 @@ export const useStore = create<StoreState>((set, get) => ({
   highlight: null,
   checkedOut: null,
   cartOpen: false,
+  ...blankDiscovery(),
+
+  startGeneralDiscovery: (mode, request) => {
+    const interpretationId = `interpret-${Date.now()}-${++interpretationSeq}`;
+    set({
+      domain: "general",
+      stage: "interpreting",
+      answers: {},
+      liveProducts: [],
+      searchEvents: [],
+      searchSummary: "",
+      searchSource: null,
+      searchError: null,
+      activeSearchId: null,
+      brief: null,
+      cart: [],
+      proposals: [],
+      filters: makeFilters(),
+      highlight: null,
+      checkedOut: null,
+      cartOpen: false,
+      agentAnswerFlash: null,
+      ...blankDiscovery(),
+      discoveryMode: mode,
+      interpretationId,
+      pendingRequest: { mode, ...request },
+    });
+    get().log("user", mode === "text" ? `Described a product request: "${request.text}"` : mode === "url" ? "Pasted a product link to interpret" : "Uploaded a reference photo to interpret");
+    return interpretationId;
+  },
+  completeInterpretation: (operationId, payload) => {
+    if (get().interpretationId !== operationId || get().stage !== "interpreting") return false;
+    set({
+      interpretationId: null,
+      interpretationError: null,
+      discoveryReference: payload.reference,
+      shoppingBrief: payload.brief,
+      clarifyingQuestions: payload.questions,
+      answers: {},
+      briefConfirmed: false,
+      brief: {
+        request: payload.brief.useCase ? `${payload.brief.productType} — ${payload.brief.useCase}` : payload.brief.productType,
+        required: [...payload.brief.priorities],
+        preferred: [],
+        budget: payload.brief.budget?.amount,
+        dealBreakers: [...payload.brief.exclusions],
+        targetCount: 1,
+      },
+      stage: payload.questions.length ? "clarifying" : "brief-review",
+    });
+    get().log("agent", payload.questions.length
+      ? `Interpreted the request as "${payload.brief.productType}"; ${payload.questions.length} clarifying question(s) follow`
+      : `Interpreted the request as "${payload.brief.productType}"; brief ready for review`, "interpret-request", "success");
+    return true;
+  },
+  failInterpretation: (operationId, message) => {
+    if (get().interpretationId !== operationId || get().stage !== "interpreting") return false;
+    set((state) => ({
+      ...blankDiscovery(),
+      pendingRequest: state.pendingRequest,
+      interpretationError: message,
+      domain: null,
+      stage: "entry",
+    }));
+    get().log("agent", `Request interpretation stopped · ${message}`, "interpret-request", "error");
+    return true;
+  },
+  setClarifyingAnswer: (questionId, values, source = "user") => set((state) => ({
+    answers: { ...state.answers, [questionId]: values },
+    agentAnswerFlash: source === "agent" ? { questionId, at: Date.now() } : state.agentAnswerFlash,
+  })),
+  proceedToBriefReview: () => {
+    const state = get();
+    if (state.stage !== "clarifying" || !state.shoppingBrief) return;
+    set({
+      shoppingBrief: applyClarifyingAnswers(state.shoppingBrief, state.clarifyingQuestions, state.answers),
+      stage: "brief-review",
+    });
+  },
+  updateShoppingBrief: (patch) => set((state) => (
+    state.shoppingBrief && (state.stage === "brief-review" || state.stage === "clarifying")
+      ? { shoppingBrief: { ...state.shoppingBrief, ...patch }, briefConfirmed: false }
+      : state
+  )),
+  confirmShoppingBrief: () => {
+    const state = get();
+    if (state.stage !== "brief-review" || !state.shoppingBrief?.deliveryCountry) return false;
+    set({ briefConfirmed: true });
+    get().log("user", `Confirmed the shopping brief for "${state.shoppingBrief.productType}"`);
+    return true;
+  },
+  returnToEntry: () => set({ domain: null, stage: "entry", ...blankDiscovery() }),
 
   startDomain: (domain, usePreset = false) => {
     const brief = usePreset ? structuredClone(DOMAIN_CONFIG[domain].preset) : blankBrief();
     const initialCategory = usePreset ? (DOMAIN_CONFIG[domain].categories[1] ?? "all") : "all";
-    set({ domain, stage: "decisions", answers: {}, liveProducts: [], searchEvents: [], searchSummary: "", searchSource: null, searchError: null, activeSearchId: null, brief, cart: [], proposals: [], filters: makeFilters(initialCategory), highlight: null, checkedOut: null, cartOpen: false, agentAnswerFlash: null });
+    set({ domain, stage: "decisions", answers: {}, liveProducts: [], searchEvents: [], searchSummary: "", searchSource: null, searchError: null, activeSearchId: null, brief, cart: [], proposals: [], filters: makeFilters(initialCategory), highlight: null, checkedOut: null, cartOpen: false, agentAnswerFlash: null, ...blankDiscovery() });
     get().log("user", `Selected ${DOMAIN_CONFIG[domain].label}`);
   },
   setDecisionAnswer: (questionId, values, source = "user") => set((state) => ({
@@ -223,12 +349,12 @@ export const useStore = create<StoreState>((set, get) => ({
     set((state) => ({ activeSearchId: null, stage: "error", searchError, searchEvents: [...state.searchEvents.map((event) => event.status === "active" ? { ...event, status: "done" as const } : event), { id: Date.now(), label: "Live search stopped", detail: searchError, status: "error" }] }));
     return true;
   },
-  returnToDecisions: () => set({ activeSearchId: null, stage: "decisions", liveProducts: [], searchEvents: [], searchSummary: "", searchSource: null, searchError: null, cart: [], proposals: [], highlight: null }),
+  returnToDecisions: () => set((state) => ({ activeSearchId: null, stage: state.domain === "general" ? "brief-review" as const : "decisions" as const, liveProducts: [], searchEvents: [], searchSummary: "", searchSource: null, searchError: null, cart: [], proposals: [], highlight: null })),
   continueShopping: () => {
-    set({ activeSearchId: null, stage: "decisions", searchEvents: [], searchSummary: "", searchSource: null, searchError: null, highlight: null });
+    set((state) => ({ activeSearchId: null, stage: state.domain === "general" ? "brief-review" as const : "decisions" as const, searchEvents: [], searchSummary: "", searchSource: null, searchError: null, highlight: null }));
     get().log("user", "Continued shopping with earlier options and cart preserved");
   },
-  resetWorkspace: () => set({ domain: null, stage: "decisions", answers: {}, liveProducts: [], searchEvents: [], searchSummary: "", searchSource: null, searchError: null, activeSearchId: null, brief: null, cart: [], proposals: [], filters: makeFilters(), highlight: null, checkedOut: null, cartOpen: false, agentAnswerFlash: null }),
+  resetWorkspace: () => set({ domain: null, stage: "entry", answers: {}, liveProducts: [], searchEvents: [], searchSummary: "", searchSource: null, searchError: null, activeSearchId: null, brief: null, cart: [], proposals: [], filters: makeFilters(), highlight: null, checkedOut: null, cartOpen: false, agentAnswerFlash: null, ...blankDiscovery() }),
   updateBrief: (patch) => set((state) => ({ brief: state.brief ? { ...state.brief, ...patch } : state.brief })),
   log: (source, summary, tool, outcome) => set((state) => ({ activity: [{ id: ++activitySeq, time: stamp(), source, summary, tool, outcome }, ...state.activity].slice(0, 200) })),
   setFilter: (patch) => set((state) => ({ filters: { ...state.filters, ...patch } })),
@@ -336,7 +462,7 @@ export const useStore = create<StoreState>((set, get) => ({
     if (source === "user") state.log("system", `Shopping plan confirmed—${listedTotal}, ${totals.itemCount} item(s)`);
     return { ok: true, message: `Shopping plan confirmed. No purchase was made. Listed subtotal: ${listedTotal}.` };
   },
-  newShop: () => set({ domain: null, stage: "decisions", answers: {}, liveProducts: [], searchEvents: [], searchSummary: "", searchError: null, activeSearchId: null, brief: null, cart: [], proposals: [], filters: makeFilters(), activity: [], highlight: null, checkedOut: null, cartOpen: false, agentAnswerFlash: null }),
+  newShop: () => set({ domain: null, stage: "entry", answers: {}, liveProducts: [], searchEvents: [], searchSummary: "", searchError: null, activeSearchId: null, brief: null, cart: [], proposals: [], filters: makeFilters(), activity: [], highlight: null, checkedOut: null, cartOpen: false, agentAnswerFlash: null, ...blankDiscovery() }),
   setCartOpen: (cartOpen) => set({ cartOpen }),
   cartTotals: () => {
     const state = get();

@@ -1,5 +1,7 @@
-import { cancelActiveSearch, runCoordinatedSearch } from "../agent/searchCoordinator";
+import { cancelActiveSearch, runCoordinatedSearch, runCoordinatedGeneralSearch } from "../agent/searchCoordinator";
+import { startTextDiscovery, startUrlDiscovery } from "../agent/startDiscovery";
 import { DECISION_QUESTIONS, isValidAnswerValues, requiredQuestionIds } from "../decision/questions";
+import { isValidClarifyingAnswer } from "../decision/shoppingBrief";
 import { checkConstraints, liveProductById, projectedCart, useStore } from "../store/useStore";
 import { formatCurrencyTotals, formatMoney } from "../utils/money";
 import type { DecisionDomain, Preferences } from "../types";
@@ -61,13 +63,28 @@ async function audited(name: string, _args: unknown, run: () => Promise<ToolResu
 }
 
 const requireDomain = () => useStore.getState().domain ?? null;
-const validDomain = (value: unknown): value is DecisionDomain => value === "meals" || value === "gadgets" || value === "clothing";
+const validDomain = (value: unknown): value is Exclude<DecisionDomain, "general"> => value === "meals" || value === "gadgets" || value === "clothing";
+
+function discoveryPayload() {
+  const state = useStore.getState();
+  return {
+    discovery: {
+      mode: state.discoveryMode,
+      interpretation: state.discoveryReference,
+      interpretationError: state.interpretationError,
+      clarifyingQuestions: state.stage === "clarifying" ? state.clarifyingQuestions : [],
+      clarifyingAnswers: state.domain === "general" ? state.answers : {},
+      shoppingBrief: state.shoppingBrief,
+      briefConfirmed: state.briefConfirmed,
+    },
+  };
+}
 
 let registered = false;
 let registration: Promise<boolean> | null = null;
 const registeredToolNames = new Set<string>();
 
-const tools = [
+export const webMcpTools = [
     {
       name: "get-decision-state",
       description: "Read the visible Co-Cart workflow: category, stage, decision questions and answers, live Shopify results, confirmed cart, and pending human approvals.",
@@ -77,12 +94,74 @@ const tools = [
         return text({
           domain: state.domain,
           stage: state.stage,
-          questions: state.domain ? DECISION_QUESTIONS[state.domain] : [],
+          questions: state.domain && state.domain !== "general" ? DECISION_QUESTIONS[state.domain] : [],
           answers: state.answers,
+          ...discoveryPayload(),
           search: { source: "OpenAI agent → Shopify Global Catalog MCP", status: state.stage, events: state.searchEvents, error: state.searchError },
           liveResults: state.liveProducts.map((product) => productSummary(product.id)),
           ...cartPayload(),
         });
+      }),
+    },
+    {
+      name: "set-shopping-request",
+      description: "Start open product discovery from a plain-language request (3–500 characters) or one public https product link. The server interprets it with OpenAI and returns an interpretation, a normalized brief, and any clarifying questions. Local file paths are never accepted.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          request: { type: "string", minLength: 3, maxLength: 500 },
+          url: { type: "string", maxLength: 2048 },
+        },
+      },
+      execute: async (args: { request?: unknown; url?: unknown }) => audited("set-shopping-request", args, async () => {
+        const hasRequest = typeof args.request === "string" && args.request.trim().length > 0;
+        const hasUrl = typeof args.url === "string" && args.url.trim().length > 0;
+        if (hasRequest === hasUrl) return err("Provide exactly one of request (plain language) or url (one public https product link).");
+        if (hasUrl && /^(file:\/\/|[a-z]:[\\/]|\\\\)/i.test((args.url as string).trim())) return err("Local file paths are not accepted. Paste a public https:// product link.");
+        try {
+          const payload = hasRequest ? await startTextDiscovery(args.request as string) : await startUrlDiscovery(args.url as string);
+          return text({
+            message: payload.questions.length
+              ? `Interpreted as "${payload.brief.productType}". ${payload.questions.length} clarifying question(s) are visible; answer them with answer-clarifying-question.`
+              : `Interpreted as "${payload.brief.productType}". The brief is visible for review; confirm it with confirm-shopping-brief.`,
+            interpretation: payload.reference,
+            brief: payload.brief,
+            questions: payload.questions,
+          });
+        } catch (error) {
+          return err(error instanceof Error ? error.message : "The request could not be interpreted. No fallback results were used.");
+        }
+      }),
+    },
+    {
+      name: "answer-clarifying-question",
+      description: "Answer one currently visible generated clarifying question using its returned schema (option values for single/multiple, free text for text, a numeric amount for money).",
+      inputSchema: { type: "object", properties: { questionId: { type: "string" }, values: { type: "array", items: { type: "string" }, maxItems: 2 } }, required: ["questionId", "values"] },
+      execute: async (args: { questionId?: unknown; values?: unknown }) => audited("answer-clarifying-question", args, () => {
+        const state = useStore.getState();
+        if (state.domain !== "general" || state.stage !== "clarifying") return err("Clarifying questions are only answerable while a discovery clarification is visible.");
+        const question = state.clarifyingQuestions.find((item) => item.id === args.questionId);
+        if (!question || !Array.isArray(args.values)) return err("Unknown clarifying question or invalid values.");
+        const values = args.values.filter((value): value is string => typeof value === "string").map((value) => value.trim());
+        if (!isValidClarifyingAnswer(question, values)) return err(`Values do not match the schema for question ${question.id}. Use the options and kind returned by get-decision-state.`);
+        state.setClarifyingAnswer(question.id, values, "agent");
+        return text({ message: "Answer recorded in the visible UI.", questionId: question.id, values });
+      }),
+    },
+    {
+      name: "confirm-shopping-brief",
+      description: "Confirm the visible normalized shopping brief after the shopper has reviewed it. Required before start-live-search for open discovery. Never confirm without the shopper's agreement.",
+      inputSchema: { type: "object", properties: {} },
+      execute: async (args: unknown) => audited("confirm-shopping-brief", args, () => {
+        const state = useStore.getState();
+        if (state.domain !== "general") return err("No open shopping brief is active.");
+        if (state.stage === "clarifying") {
+          const missing = state.clarifyingQuestions.filter((question) => question.required && !isValidClarifyingAnswer(question, state.answers[question.id] ?? []));
+          if (missing.length) return err(`Required clarifying question(s) still need answers: ${missing.map((question) => question.id).join(", ")}.`);
+          state.proceedToBriefReview();
+        }
+        if (!useStore.getState().confirmShoppingBrief()) return err("Review the brief on the brief-review screen before confirming.");
+        return text({ message: "Brief confirmed in the visible UI. Call start-live-search to run the live OpenAI → Shopify search.", brief: useStore.getState().shoppingBrief });
       }),
     },
     {
@@ -154,8 +233,23 @@ const tools = [
       execute: async (args: unknown) => audited("start-live-search", args, async () => {
         const state = useStore.getState();
         const domain = state.domain;
-        if (!domain) return err("Choose a category first.");
+        if (!domain) return err("Choose a category or set a shopping request first.");
         if (state.stage === "searching") return err("A live search is already running.");
+        if (domain === "general") {
+          if (state.stage !== "brief-review" || !state.briefConfirmed || !state.shoppingBrief) return err("Confirm the visible shopping brief with confirm-shopping-brief before searching.");
+          const brief = structuredClone(state.shoppingBrief);
+          const searchId = state.beginLiveSearch();
+          if (!searchId) return err("A live search is already running.");
+          try {
+            const result = await runCoordinatedGeneralSearch(brief, { onStatus: (label, detail, status) => useStore.getState().addSearchEvent(searchId, label, detail, status) });
+            if (!useStore.getState().completeLiveSearch(searchId, result.products, result.summary, result.source)) return err("The search result was discarded because a newer request superseded it.");
+            return text({ source: "live Shopify Global Catalog", summary: result.summary, products: result.products.map((product) => productSummary(product.id)) });
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            useStore.getState().failLiveSearch(searchId, message);
+            return err(`${message} No demo fallback was used.`);
+          }
+        }
         const missing = requiredQuestionIds(domain).filter((id) => !state.answers[id]?.length);
         if (missing.length) return err(`Answer every visible decision card first. Missing: ${missing.join(", ")}.`);
         const searchId = state.beginLiveSearch();
@@ -265,7 +359,7 @@ export async function registerWebMcpTools(): Promise<boolean> {
 
   registration = (async () => {
     try {
-      for (const tool of tools) {
+      for (const tool of webMcpTools) {
         if (registeredToolNames.has(tool.name)) continue;
         await mc.registerTool(tool);
         registeredToolNames.add(tool.name);
